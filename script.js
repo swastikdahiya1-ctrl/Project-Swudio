@@ -152,6 +152,8 @@ function saveAll() {
 }
 
 // ─── STATE & HISTORY ─────────────────────────────────────────
+// Safe GSAP wrapper - gracefully degrades if GSAP hasn't loaded yet
+function safeGsap(fn) { if (typeof gsap !== 'undefined') fn(); }
 let S = { view: 'dashboard', projectId: null, shotId: null, tab: 'overview', canvasTool: 'select', vsSidebarOpen: true };
 let viewHistory = [];
 
@@ -305,7 +307,7 @@ function renderSidebar(){
        <div class="sb-proj-header ${isCurrent ? 'active' : ''}" data-toggle-pid="${p.id}">
          <div style="display:flex; align-items:center; gap:8px;">
            ${isCurrent ? '<div style="width:12px; height:12px; flex-shrink:0;"></div>' : `<i class="ti ${isExpanded ? 'ti-chevron-down' : 'ti-chevron-right'}" style="font-size:12px; color:#555;"></i>`}
-           <span style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:130px;">${p.title||'UNTITLED'}</span>
+           <span class="sb-proj-text" style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:130px;">${p.title||'UNTITLED'}</span>
          </div>
          <button class="icon-btn pin-btn" data-pin-id="${p.id}" style="padding:2px; color:${pinColor};"><i class="ti ti-pin"></i></button>
        </div>
@@ -358,7 +360,7 @@ function renderSidebar(){
        const navEl = el.nextElementSibling; 
        
        if(isExpanded && navEl && navEl.classList.contains('sb-proj-nav')) {
-          gsap.to(navEl, {
+          if (typeof gsap !== 'undefined') gsap.to(navEl, {
               height: 0, opacity: 0, duration: 0.35, ease: "power2.inOut",
               onComplete: () => {
                   expandedProjectsState = expandedProjectsState.filter(id => id !== pid);
@@ -447,10 +449,10 @@ function renderDashboard(m) {
 
     <div class="page-topbar">
       <div class="welcome">
-        <h1>WELCOME BACK.</h1>
+        <h1>WELCOME BACK, SWASTIK.</h1>
         <p>PICK UP WHERE YOU LEFT OFF OR START SOMETHING NEW.</p>
       </div>
-      <button class="btn btn-primary" id="btn-new-proj"><i class="ti ti-plus" style="font-size:12px;"></i> NEW PROJECT</button>
+      <button class="btn btn-primary" id="btn-new-proj"><i class="ti ti-plus" style="font-size:12px;"></i> <span>NEW PROJECT</span></button>
     </div>
 
     <div class="dash-section-header">
@@ -480,6 +482,61 @@ function renderDashboard(m) {
     document.getElementById('btn-new-proj').addEventListener('click', () => openNewProjModal());
     document.getElementById('idea-send-btn').addEventListener('click', handleIdeaSend);
     document.getElementById('idea-inp').addEventListener('keydown', e => { if (e.key === 'Enter') handleIdeaSend(); });
+
+    // ─── DASHBOARD BOOT SEQUENCE (GSAP) ─────────────────────────
+    if (typeof gsap !== 'undefined') {
+        if (!window._appHasBooted) {
+            const cards = m.querySelectorAll('.project-card, .new-card');
+            
+            // We isolate the text from the button so they can animate differently
+            const topbarBtn = m.querySelector('#btn-new-proj');
+            const dashTitle = m.querySelector('.welcome h1');
+            const dashSub = m.querySelector('.welcome p');
+            
+            const headers = m.querySelectorAll('.dash-section-header');
+            const ideas = m.querySelectorAll('.idea-input-row, .dash-idea-row');
+            const sidebarItems = document.querySelectorAll('.sidebar .sb-logo-wrap, .sidebar .sb-label, .sidebar .sb-item, .sidebar .sb-proj-header, .sidebar .sb-footer');
+
+            const tl = gsap.timeline();
+            
+            // Set initial hidden states
+            gsap.set(cards, { opacity: 0, y: 50 });
+            gsap.set(topbarBtn, { opacity: 0, y: -20 });
+            
+            // Hide the text by collapsing its visible box to 0% width on the left, and blurring it heavily
+            gsap.set([dashTitle, dashSub], { 
+                clipPath: "polygon(-10% -50%, -10% -50%, -10% 150%, -10% 150%)", 
+                filter: "blur(12px)" 
+            });
+            
+            gsap.set(headers, { opacity: 0, y: 10 });
+            gsap.set(ideas, { opacity: 0, y: 50 });
+            gsap.set(sidebarItems, { opacity: 0, y: 40 });
+            
+            let startTime = 0;
+            
+            // 1. Projects slide up first
+            tl.to(cards, { y: 0, opacity: 1, duration: 0.5, stagger: 0.2, ease: "expo.out" }, startTime);
+            
+            // 2. Sidebar elements ripple up immediately after
+            tl.to(sidebarItems, { y: 0, opacity: 1, duration: 0.4, stagger: 0.03, ease: "expo.out" }, startTime + 0.15);
+            
+            startTime += 0.4;
+            
+            // 3. Topbar Drops & Text Masks
+            // Button drops in normally
+            tl.to(topbarBtn, { y: 0, opacity: 1, duration: 0.5, ease: "expo.out" }, startTime)
+              // Title sweeps open and focuses
+              .to(dashTitle, { clipPath: "polygon(-10% -50%, 110% -50%, 110% 150%, -10% 150%)", filter: "blur(0px)", duration: 2, ease: "power4.out" }, startTime)
+              .to(dashSub, { clipPath: "polygon(-10% -50%, 110% -50%, 110% 150%, -10% 150%)", filter: "blur(0px)", duration: 2, ease: "power4.out" }, startTime + 0.2);
+            
+            // 4. Headers and Ideas snap into place
+            tl.to(headers, { y: 0, opacity: 1, duration: 0.7, stagger: 0.1, ease: "expo.out" }, startTime + 0.1)
+              .to(ideas, { y: 0, opacity: 1, duration: 0.7, stagger: 0.05, ease: "expo.out" }, startTime + 0);
+
+            window._appHasBooted = true; // Permanently lock it so it doesn't trigger again
+        }
+    }
 }
 
 function renderProjGrid() {
@@ -708,7 +765,7 @@ function renderOverview(m) {
         <div class="sum-row"><span class="sum-key">Duration</span><span class="sum-val">${proj.duration || '—'}</span></div>
         <div class="sum-row"><span class="sum-key">Status</span><span class="sum-val">${proj.status}</span></div>
         <div class="sum-row" style="border-bottom:none;"><span class="sum-key">Created</span><span class="sum-val">${fmtDate(proj.createdAt)}</span></div>
-        <button class="card-bottom-btn" id="edit-brief-btn"><i class="ti ti-pencil"></i> EDIT BRIEF</button>
+        <button class="card-bottom-btn" id="edit-brief-btn" style="border: 2px dashed #444; padding: 20px; background: rgba(10,10,10,0.5); width: 100%; border-radius: 4px;"><i class="ti ti-pencil"></i> <span>EDIT BRIEF</span></button>
       </div>
       
       <div class="ov-card">
@@ -762,7 +819,7 @@ function renderOverview(m) {
             </div>
           `).join('') : `<div style="font-size:10px; color:#555;">No ideas assigned to project.</div>`}
         </div>
-        <button class="card-bottom-btn" id="ov-add-idea-btn"><i class="ti ti-plus"></i> ADD IDEA</button>
+        <button class="card-bottom-btn" id="ov-add-idea-btn" style="border: 2px dashed #444; padding: 20px; background: rgba(10,10,10,0.5); width: 100%; border-radius: 4px;"><i class="ti ti-plus"></i> <span>ADD IDEA</span></button>
       </div>
     </div>
   `;
@@ -831,6 +888,36 @@ function renderOverview(m) {
             });
         });
     }
+
+    // ─── OVERVIEW BOOT SEQUENCE (GSAP) ─────────────────────────
+    setTimeout(() => {
+        if (typeof gsap !== 'undefined' && !isEmpty) {
+            window._bootedOverviews = window._bootedOverviews || {};
+            
+            // Only animate if this specific project overview hasn't been booted yet
+            if (!window._bootedOverviews[proj.id]) {
+                const cards = m.querySelectorAll('.ov-card');
+                const progCon = m.querySelector('.ov-prog-container');
+                const progFill = m.querySelector('.ov-prog-fill');
+                const titleRow = m.querySelector('.ov-title-row');
+                const subtitle = m.querySelector('.ov-subtitle');
+
+                gsap.set(cards, { opacity: 0, y: 50 });
+                gsap.set(progCon, { opacity: 0, y: 50  });
+                gsap.set(progFill, { width: "0%" });
+                gsap.set([titleRow, subtitle], { opacity: 0, y: 20 });
+                
+                const tl = gsap.timeline();
+                
+                tl.to(cards, { opacity: 1, y: 0, duration: 0.3, stagger: 0.1, ease: "easeOutExpo" })
+                  .to(progCon, { opacity: 1, y: 0, duration: 0.3, ease: "power2.out" }, "-=0.5")
+                  .to(progFill, { width: `${pg}%`, duration: 1, ease: "easeOutExpo" }, "-=0.4")
+                  .to([titleRow, subtitle], { opacity: 1, y: 0, duration: 0.5, stagger: 0.1, ease: "back.out(1.2)" }, "-=1");
+                  
+                window._bootedOverviews[proj.id] = true;
+            }
+        }
+    }, 10);
 }
 
 function openIdeaToShotModal(proj, idea, m) {
@@ -904,7 +991,7 @@ function renderScript(m) {
         <p>${proj.title || 'UNTITLED'}</p>
       </div>
       <div style="display:flex; gap:12px;">
-         <button class="btn btn-ghost" id="vs-toggle-sidebar"><i class="ti ti-layout-sidebar-right"></i> TOGGLE IDEAS PANEL</button>
+         <button class="btn btn-ghost" id="vs-toggle-sidebar"><i class="ti ti-layout-sidebar-right"></i> <span>TOGGLE IDEAS PANEL</span></button>
       </div>
     </div>
     
@@ -942,13 +1029,13 @@ function renderScript(m) {
                        <button class="vs-tag-btn ${tagClass}" data-idx="${i}" style="color:${btnColor}; font-size:10px; font-family:inherit; background:none; border:none; text-align:left; cursor:pointer;">${shotName}</button>
                        ${hasTag ? `<button class="icon-btn vs-reassign-btn" data-idx="${i}" style="padding:0; color:${btnColor}; font-size:12px; justify-content:flex-start;" title="Reassign shot"><i class="ti ti-target"></i></button>` : `<button class="icon-btn vs-reassign-btn" data-idx="${i}" style="padding:0; color:#444; font-size:12px; justify-content:flex-start;" title="Assign to shot"><i class="ti ti-target"></i></button>`}
                    </div>
-                   <textarea class="vs-textarea ${isHeader ? 'header-mode' : ''}" data-idx="${i}" placeholder="WRITE SCENE..." style="flex:1; background:transparent; border:none; color:#DDDDDE; font-family:inherit; font-size:11px; resize:none; outline:none; line-height:1.6;">${b.text}</textarea>
+                   <textarea class="vs-textarea ${isHeader ? 'header-mode' : ''}" data-idx="${i}" placeholder="WRITE SCENE..." spellcheck="false" style="flex:1; background:transparent; border:none; color:#DDDDDE; font-family:inherit; font-size:11px; resize:none; outline:none; line-height:1.6;">${b.text}</textarea>
                    <div class="vs-block-actions">
                       <button class="icon-btn del-block-btn" data-idx="${i}" style="color:#cc5555; padding:8px;"><i class="ti ti-trash"></i></button>
                    </div>
                 </div>`;
     }).join('')}
-             <button class="vs-add-block-btn" id="vs-add-block" style="margin-top:12px; border-style:dashed;">+ ADD BLOCK</button>
+             <button class="vs-add-block-btn" id="vs-add-block" style="margin-top:12px; border-style:dashed;"><span>+ ADD BLOCK</span></button>
              <div style="font-size:9px; color:#555; margin-top:32px; text-align:center;"><i class="ti ti-info-circle"></i> TIP: START A BLOCK WITH # TO INSTANTLY FORMAT IT AS A SCENE HEADER.</div>
           </div>
        </div>
@@ -1230,8 +1317,8 @@ function renderBoard(m) {
     </div>
   </div>`;
 
-    // 2. YIELD THREAD TO LET UI CLICK RESOLVE INSTANTLY
-    setTimeout(() => {
+    // Execute synchronously - setTimeout causes lag when hosted
+    {
         if (S.view !== 'project' || S.tab !== 'board') return;
 
         const surface = document.getElementById('canvas-surface');
@@ -1240,10 +1327,16 @@ function renderBoard(m) {
         const hint = document.getElementById('canvas-hint');
         const cvs = document.getElementById('canvas-draw-layer');
         
-        // 3. LAZY-LOAD THE 64MB CANVAS MEMORY
-        cvs.width = 4000;
-        cvs.height = 4000;
-        const ctx = cvs.getContext('2d', { desynchronized: true }); // GPU acceleration flag
+        // Canvas is only sized when pencil/eraser tool is activated (saves ~64MB GPU alloc)
+        let ctx = null;
+        let canvasReady = false;
+        function ensureCanvas() {
+            if (canvasReady) return;
+            cvs.width = 4000;
+            cvs.height = 4000;
+            ctx = cvs.getContext('2d', { desynchronized: true });
+            canvasReady = true;
+        }
 
         surface.focus();
 
@@ -1262,6 +1355,7 @@ function renderBoard(m) {
             objectsContainer.innerHTML = '';
             showHint();
 
+            if (canvasReady && ctx) {
             ctx.clearRect(0, 0, 4000, 4000);
             ctx.lineCap = 'round';
             ctx.lineJoin = 'round';
@@ -1278,6 +1372,7 @@ function renderBoard(m) {
                 });
                 ctx.stroke();
             });
+            } // end canvasReady guard
 
             // 4. BATCH DOM INJECTION (Prevents slow loop rendering)
             const frag = document.createDocumentFragment();
@@ -1392,7 +1487,7 @@ function renderBoard(m) {
         _boardMoveHandler = e => {
             if (S.view !== 'project' || S.tab !== 'board') return;
 
-            if (drawingPath && currentPath) {
+            if (drawingPath && currentPath && canvasReady && ctx) {
                 const rect = document.getElementById('canvas-surface').getBoundingClientRect();
                 const x = (e.clientX - rect.left - S.boardPan.x) / S.boardZoom; const y = (e.clientY - rect.top - S.boardPan.y) / S.boardZoom;
                 currentPath.points.push({ x, y });
@@ -1473,6 +1568,7 @@ function renderBoard(m) {
             if (e.button !== 0) return;
 
             if (S.canvasTool === 'pencil' || S.canvasTool === 'eraser') {
+                ensureCanvas();
                 panning = false; drawingPath = true;
                 boardPushHistory();
                 const rect = document.getElementById('canvas-surface').getBoundingClientRect();
@@ -1574,7 +1670,7 @@ function renderBoard(m) {
 
         applyTransform(); renderElements();
 
-    }, 20); // 20ms yield unlocks the single thread
+    } // end board init
 }
 // ─── SHOTS GRID ──────────────────────────────────────────────
 function renderShots(m) {
@@ -1595,7 +1691,7 @@ function renderShots(m) {
            <h1>Shots</h1>
            <p>All shots in your project.</p>
        </div>
-       <button class="btn btn-ghost" id="new-shot-btn" style="border: 1px solid #333;"><i class="ti ti-plus"></i> NEW SHOT</button>
+       <button class="btn btn-ghost" id="new-shot-btn" style="border: 1px solid #333; border-radius: 0; padding: 8px 16px;"><i class="ti ti-plus"></i> <span>NEW SHOT</span></button>
     </div>
     
     <div class="shots-dash-bar-revamp">
@@ -1885,7 +1981,7 @@ function renderShotDetail(m) {
             
             // If we weren't at 100 before, and we are at 100 now -> FIRE
             if (oldProg < 100 && s.progress === 100) {
-                confetti({
+                if (typeof confetti !== 'undefined') confetti({
                     particleCount: 120,
                     spread: 80,
                     origin: { y: 0.6 },

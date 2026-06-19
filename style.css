@@ -108,8 +108,19 @@ html,body{height:100%;background:#0d0d0d;font-family:'Inter',system-ui,sans-seri
   min-height: 100%;
 }
 .dashboard-revamp .page-topbar { margin-bottom: 48px; display:flex; justify-content:space-between; align-items:flex-start; }
-.dashboard-revamp .welcome h1 { font-size: 16px; font-weight: 500; color: #DDDDDE; letter-spacing: 0; margin-bottom: 6px; }
-.dashboard-revamp .welcome p { font-size: 10px; color: #666; font-weight: 400; }
+.dashboard-revamp .welcome h1 { 
+  font-size: 32px; 
+  font-weight: 600; 
+  color: #DDDDDE; 
+  letter-spacing: 1px; 
+  margin-bottom: 8px; 
+}
+.dashboard-revamp .welcome p { 
+  font-size: 12px; 
+  color: #666; 
+  font-weight: 500; 
+  letter-spacing: 1px;
+}
 .dashboard-revamp .btn { 
   display:inline-flex; align-items:center; gap:6px; cursor:pointer;
   font-family: 'IBM Plex Mono', monospace; text-transform: uppercase; border-radius: 2px; font-size: 10px; padding: 8px 14px; font-weight:500; transition: background .1s, color .1s, border-color .1s; 
@@ -165,7 +176,11 @@ html,body{height:100%;background:#0d0d0d;font-family:'Inter',system-ui,sans-seri
 .overview-revamp .ov-prog-container { display: flex; align-items: center; gap: 16px; margin: 16px 0; padding: 16px 0; border-top:1px dashed #1E1E1E; border-bottom: 1px dashed #1E1E1E; font-size: 10px; }
 .overview-revamp .ov-prog-label { color: #888; letter-spacing: 0.05em; font-weight: 500;}
 .overview-revamp .ov-prog-bar-wrap { flex: 1; height: 2px; background: #222; position: relative; }
-.overview-revamp .ov-prog-fill { height: 100%; background: #DDDDDE; transition: width 0.3s; }
+.overview-revamp .ov-prog-fill { 
+  height: 100%; 
+  background: #DDDDDE; 
+  will-change: width; /* Adds hardware acceleration for the GSAP animation */
+}
 .overview-revamp .ov-prog-pct { color: #DDDDDE; font-weight: 500; font-size: 11px; margin-left: 8px; }
 .overview-revamp .ov-prog-count { color: #555; margin-left: 8px; }
 
@@ -894,4 +909,51 @@ html,body{height:100%;background:#0d0d0d;font-family:'Inter',system-ui,sans-seri
 /* Draw the line when done */
 .task-check.done + .task-name::after {
   width: 100%;
+}
+
+/* ─── TYPOGRAPHY SCALE (DASHBOARD) ─────────────────────────── */
+.dashboard-revamp .welcome h1 { 
+  font-size: 32px; 
+  font-weight: 600; 
+  color: #DDDDDE; 
+  letter-spacing: 1px; 
+  margin-bottom: 8px; 
+}
+.dashboard-revamp .welcome p { 
+  font-size: 12px; 
+  color: #666; 
+  font-weight: 500; 
+  letter-spacing: 1px;
+}
+
+/* ─── TEXT SPRING ANIMATIONS ───────────────────────────────── */
+/* 1. Global Button Text Wrappers */
+.btn span, 
+.card-bottom-btn span, 
+.vs-add-block-btn span, 
+.add-idea-btn span, 
+.add-task-btn span, 
+.add-frame-btn span {
+  display: inline-block;
+  transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.2);
+  will-change: transform;
+}
+.btn:hover span, 
+.card-bottom-btn:hover span, 
+.vs-add-block-btn:hover span, 
+.add-idea-btn:hover span, 
+.add-task-btn:hover span, 
+.add-frame-btn:hover span {
+  transform: translateX(4px);
+}
+
+/* 2. Sidebar Project Text */
+.sb-proj-text {
+  display: inline-block;
+  transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.2);
+  will-change: transform;
+}
+.sb-proj-header:hover .sb-proj-text {
+  transform: translateX(5px);
+  color: #DDDDDE;
 }

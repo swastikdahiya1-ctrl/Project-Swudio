@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Studio PM</title>
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+  
+  <link rel="stylesheet" href="lib/tabler-icons.min.css"/>
+  
+  <link rel="stylesheet" href="style.css"/>
+</head>
+<body>
+  <div id="splash-screen" style="position:fixed; inset:0; background:#0B0B0B; z-index:9999; display:flex; align-items:center; justify-content:center; color:#555; font-family:'IBM Plex Mono', monospace; font-size:10px; letter-spacing:2px;">
+    INITIALIZING WORKSPACE...
+  </div>
+
+  <div class="app" id="app-root" style="opacity: 0;">
+    <div class="sidebar" id="sidebar"></div>
+    <div class="main" id="main"></div>
+  </div>
+  
+  <div id="modal-root"></div>
+
+  <script type="module" src="js/main.js"></script>
+  
+  <!-- App loads first, animations and confetti load after without blocking -->
+  <script src="lib/gsap.min.js" async></script>
+  <script src="lib/Draggable.min.js" async></script>
+  <script src="lib/confetti.browser.min.js" async></script>
+  
+</body>
+</html>

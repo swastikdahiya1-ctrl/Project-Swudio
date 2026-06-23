@@ -3619,3 +3619,186 @@ body.is-booting .sidebar .sb-footer {
   opacity: 0 !important;
   transform: translateY(40px) !important;
 }
+
+/* ─── AUTHENTICATION SCREEN (HUD REVAMP) ─── */
+.auth-overlay {
+  position: fixed;
+  inset: 0;
+  background: #0B0B0B;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  font-family: 'IBM Plex Mono', monospace;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #888;
+}
+
+.auth-card {
+  background: #060606;
+  border: 1px solid #1E1E1E;
+  padding: 32px;
+  width: 360px;
+  max-width: 90%;
+  position: relative;
+  border-radius: 0;
+}
+
+.auth-card-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-main);
+  margin-bottom: 24px;
+  text-align: center;
+  letter-spacing: 0.1em;
+}
+
+.auth-input-group {
+  margin-bottom: 18px;
+}
+
+.auth-input-group label {
+  display: block;
+  font-size: 9px;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+}
+
+.auth-input {
+  width: 100%;
+  background: #0D0D0D;
+  border: 1px solid #1E1E1E;
+  padding: 10px 12px;
+  color: var(--text-main);
+  font-family: inherit;
+  font-size: 11px;
+  outline: none;
+}
+
+.auth-input:focus {
+  border-color: #333;
+}
+
+.auth-btn-primary {
+  width: 100%;
+  background: transparent;
+  border: 1px solid #333;
+  color: var(--text-main);
+  padding: 10px;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 11px;
+  transition: all 0.3s var(--bezier-spring);
+  margin-top: 8px;
+}
+
+.auth-btn-primary:hover {
+  border-color: var(--text-muted);
+  color: #fff;
+}
+
+.auth-toggle-link {
+  display: block;
+  text-align: center;
+  font-size: 9px;
+  color: var(--text-muted);
+  margin-top: 16px;
+  cursor: pointer;
+  transition: color 0.3s;
+}
+
+.auth-toggle-link:hover {
+  color: var(--text-main);
+}
+
+.auth-config-trigger {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  font-size: 12px;
+  color: #333;
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: color 0.3s;
+}
+
+.auth-config-trigger:hover {
+  color: var(--text-main);
+}
+
+/* Auth settings overlay modal */
+.auth-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 11000;
+  font-family: 'IBM Plex Mono', monospace;
+  text-transform: uppercase;
+}
+
+.auth-modal {
+  background: #0B0B0B;
+  border: 1px solid #1E1E1E;
+  padding: 24px;
+  width: 400px;
+  max-width: 90%;
+  position: relative;
+}
+
+.auth-modal h3 {
+  font-size: 12px;
+  color: var(--text-main);
+  margin-bottom: 16px;
+  letter-spacing: 0.05em;
+}
+
+.auth-modal-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.auth-modal-btn {
+  flex: 1;
+  background: transparent;
+  border: 1px solid #222;
+  color: #888;
+  padding: 8px;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 10px;
+  transition: all 0.3s;
+}
+
+.auth-modal-btn.primary {
+  border-color: #333;
+  color: var(--text-main);
+}
+
+.auth-modal-btn:hover {
+  border-color: var(--text-muted);
+  color: #fff;
+}
+
+.auth-status-msg {
+  font-size: 9px;
+  text-align: center;
+  margin-top: 12px;
+  min-height: 12px;
+  letter-spacing: 0.02em;
+}
+
+.auth-status-msg.error {
+  color: #ff4444;
+}
+
+.auth-status-msg.success {
+  color: var(--accent-green);
+}

@@ -2,8 +2,9 @@ import { state } from './state.js';
 import { uid, formatDateTime } from './utils.js';
 import { saveAll } from './db.js';
 import { openConfirmModal, openPromptModal, closeModal, openModal } from './utils.js';
-import { nav, render } from './main.js';
+import { nav, render, bootApp } from './main.js';
 import { projProg, shotCounts } from './project.js';
+import { signIn, signUp, signOut, saveConfig, isConfigured, syncDown, deleteProjectFromCloud, deleteIdeaFromCloud, deleteArchiveFromCloud } from './sync.js';
 
 export function renderSidebar() {
     const sb = document.getElementById('sidebar');
@@ -58,9 +59,15 @@ export function renderSidebar() {
     </div>
     
     <div class="sb-footer" style="display:flex; flex-direction:column; gap:12px;">
-       <div style="display:flex; gap:8px; border-bottom:1px solid #161616; padding-bottom:12px;">
-          <button class="icon-btn" id="db-export-btn" style="font-size:9px; color:#555; gap:4px; text-transform:uppercase; font-family:'IBM Plex Mono', monospace;" title="Backup Data"><i class="ti ti-download" style="font-size:12px;"></i> EXPORT</button>
-          <label class="icon-btn" style="font-size:9px; color:#555; gap:4px; text-transform:uppercase; font-family:'IBM Plex Mono', monospace; cursor:pointer;" title="Restore Data"><i class="ti ti-upload" style="font-size:12px;"></i> IMPORT<input type="file" id="db-import-btn" style="display:none;" accept=".json"></label>
+       <div style="display:flex; flex-direction:column; gap:8px; border-bottom:1px solid #161616; padding-bottom:12px;">
+          <div style="display:flex; gap:8px;">
+             <button class="icon-btn" id="db-export-btn" style="font-size:9px; color:#555; gap:4px; text-transform:uppercase; font-family:'IBM Plex Mono', monospace;" title="Backup Data"><i class="ti ti-download" style="font-size:12px;"></i> EXPORT</button>
+             <label class="icon-btn" style="font-size:9px; color:#555; gap:4px; text-transform:uppercase; font-family:'IBM Plex Mono', monospace; cursor:pointer;" title="Restore Data"><i class="ti ti-upload" style="font-size:12px;"></i> IMPORT<input type="file" id="db-import-btn" style="display:none;" accept=".json"></label>
+          </div>
+          <div style="display:flex; gap:8px;">
+             <button class="icon-btn" id="db-config-btn" style="font-size:9px; color:#555; gap:4px; text-transform:uppercase; font-family:'IBM Plex Mono', monospace;" title="Database Settings"><i class="ti ti-settings" style="font-size:12px;"></i> DB CONFIG</button>
+             ${isConfigured() ? '<button class="icon-btn" id="sb-signout-btn" style="font-size:9px; color:#c53d3d; gap:4px; text-transform:uppercase; font-family:\'IBM Plex Mono\', monospace;" title="Sign Out"><i class="ti ti-logout" style="font-size:12px;"></i> OUT</button>' : ''}
+          </div>
        </div>
        <div id="sb-clock" style="color:#333;">${formatDateTime(new Date().toISOString())}</div>
     </div>
@@ -101,6 +108,20 @@ export function renderSidebar() {
         r.readAsText(f);
         e.target.value = '';
     });
+
+    sb.querySelector('#db-config-btn').addEventListener('click', () => {
+        openDbConfigModal();
+    });
+
+    if (isConfigured()) {
+        const signOutBtn = sb.querySelector('#sb-signout-btn');
+        if (signOutBtn) {
+            signOutBtn.addEventListener('click', async () => {
+                await signOut();
+                window.location.reload();
+            });
+        }
+    }
 
     sb.querySelectorAll('.sb-proj-header').forEach(el => {
         el.addEventListener('click', (e) => {
@@ -307,6 +328,7 @@ function renderProjGrid() {
                     if (idx > -1) {
                         const deleted = state.projects.splice(idx, 1)[0];
                         state.archives.push({ type: 'project', data: deleted, archivedAt: new Date().toISOString() });
+                        deleteProjectFromCloud(p.id);
                         saveAll(); renderDashboard(document.getElementById('main')); renderSidebar();
                     }
                 } else {
@@ -352,7 +374,9 @@ function renderIdeasList() {
 
     list.querySelectorAll('.del-idea').forEach(b => b.addEventListener('click', () => {
         openConfirmModal('Delete Idea', 'Are you sure you want to delete this idea?', 'Delete', () => {
-            state.ideas = state.ideas.filter(i => i.id !== b.dataset.id); saveAll(); renderIdeasList();
+            state.ideas = state.ideas.filter(i => i.id !== b.dataset.id); 
+            deleteIdeaFromCloud(b.dataset.id);
+            saveAll(); renderIdeasList();
         });
     }));
     list.querySelectorAll('.edit-idea').forEach(btn => btn.addEventListener('click', e => {
@@ -511,6 +535,7 @@ export function renderTrash(m) {
             const idx = state.archives.findIndex(x => x.data.id === item.data.id);
             if (idx > -1) {
                 const recovered = state.archives.splice(idx, 1)[0];
+                deleteArchiveFromCloud(recovered.data.id);
                 if (recovered.type === 'project') state.projects.push(recovered.data);
                 else if (recovered.type === 'shot') {
                     // Try to find parent project
@@ -531,6 +556,7 @@ export function renderTrash(m) {
         row.querySelector('.del-btn').addEventListener('click', () => {
             openConfirmModal('DELETE FOREVER', 'Permanently destroy this item? It cannot be recovered.', 'DESTROY', () => {
                 state.archives = state.archives.filter(x => x.data.id !== item.data.id);
+                deleteArchiveFromCloud(item.data.id);
                 saveAll(); renderTrash(m);
             });
         });
@@ -639,4 +665,179 @@ export function openAssignModal(text, existingId = null) {
         else if (state.S.view === 'all-ideas') renderAllIdeas(document.getElementById('main'));
         else if (state.S.view === 'project' && state.S.tab === 'overview') render();
     }));
+}
+
+// ─── AUTH SCREEN RENDERING & ACTIONS ───
+export function renderAuthScreen() {
+    const appRoot = document.getElementById('app-root');
+    if (!appRoot) return;
+
+    let isSignUpMode = false;
+
+    function renderForm() {
+        appRoot.innerHTML = `
+            <div class="auth-overlay">
+                <button class="auth-config-trigger" id="auth-cfg-btn" title="Database Settings">
+                    <i class="ti ti-settings"></i>
+                </button>
+                
+                <div class="auth-card">
+                    <div class="auth-card-title">STUDIO PM // ${isSignUpMode ? 'CREATE ACCOUNT' : 'SECURE SIGN IN'}</div>
+                    
+                    <div class="auth-input-group">
+                        <label>EMAIL ADDRESS</label>
+                        <input type="email" id="auth-email" class="auth-input" placeholder="EMAIL@EXAMPLE.COM" autocomplete="email"/>
+                    </div>
+                    
+                    <div class="auth-input-group">
+                        <label>PASSWORD</label>
+                        <input type="password" id="auth-password" class="auth-input" placeholder="••••••••••••" autocomplete="current-password"/>
+                    </div>
+                    
+                    <button class="auth-btn-primary" id="auth-submit-btn">
+                        ${isSignUpMode ? 'REGISTER' : 'LOG IN'}
+                    </button>
+                    
+                    <div class="auth-toggle-link" id="auth-toggle-btn">
+                        ${isSignUpMode ? 'ALREADY HAVE AN ACCOUNT? SIGN IN' : 'NEED AN ACCOUNT? SIGN UP'}
+                    </div>
+                    
+                    <div class="auth-status-msg" id="auth-status"></div>
+                </div>
+            </div>
+        `;
+
+        // Bind events
+        document.getElementById('auth-submit-btn').addEventListener('click', handleAuthSubmit);
+        document.getElementById('auth-toggle-btn').addEventListener('click', () => {
+            isSignUpMode = !isSignUpMode;
+            renderForm();
+        });
+        document.getElementById('auth-cfg-btn').addEventListener('click', openDbConfigModal);
+        
+        const emailInp = document.getElementById('auth-email');
+        const passInp = document.getElementById('auth-password');
+        const handleEnter = (e) => { if (e.key === 'Enter') handleAuthSubmit(); };
+        if (emailInp) emailInp.addEventListener('keydown', handleEnter);
+        if (passInp) passInp.addEventListener('keydown', handleEnter);
+    }
+
+    renderForm();
+
+    const splash = document.getElementById('splash-screen');
+    if (appRoot) appRoot.style.opacity = '1';
+    document.body.classList.remove('is-booting');
+    
+    if (splash) {
+        if (typeof gsap !== 'undefined') {
+            gsap.to(splash, {
+                opacity: 0, duration: 0.6, ease: "power2.inOut",
+                onComplete: () => { splash.style.display = 'none'; }
+            });
+        } else {
+            splash.style.transition = 'opacity 0.6s ease-in-out';
+            splash.style.opacity = '0';
+            setTimeout(() => { splash.style.display = 'none'; }, 600);
+        }
+    }
+}
+
+async function handleAuthSubmit() {
+    const email = document.getElementById('auth-email').value.trim();
+    const password = document.getElementById('auth-password').value;
+    const statusEl = document.getElementById('auth-status');
+    const submitBtn = document.getElementById('auth-submit-btn');
+
+    if (!email || !password) {
+        statusEl.className = "auth-status-msg error";
+        statusEl.innerText = "ERROR: EMAIL AND PASSWORD REQUIRED.";
+        return;
+    }
+
+    statusEl.className = "auth-status-msg";
+    statusEl.innerText = "PROCESSING...";
+    submitBtn.disabled = true;
+
+    try {
+        const isSignUpMode = document.getElementById('auth-submit-btn').innerText === 'REGISTER';
+        if (isSignUpMode) {
+            await signUp(email, password);
+            statusEl.className = "auth-status-msg success";
+            statusEl.innerText = "REGISTRATION SUCCESSFUL. CHECK YOUR EMAIL FOR CONFIRMATION.";
+        } else {
+            await signIn(email, password);
+            statusEl.className = "auth-status-msg success";
+            statusEl.innerText = "AUTHENTICATED successfully.";
+            
+            // Sync down user state
+            await syncDown();
+            
+            // Reinitialize DOM layout
+            const appRoot = document.getElementById('app-root');
+            appRoot.innerHTML = `
+                <div class="sidebar" id="sidebar"></div>
+                <div class="main" id="main"></div>
+            `;
+            bootApp();
+        }
+    } catch (err) {
+        statusEl.className = "auth-status-msg error";
+        statusEl.innerText = `ERROR: ${err.message.toUpperCase()}`;
+    } finally {
+        submitBtn.disabled = false;
+    }
+}
+
+export function openDbConfigModal() {
+    const modalDiv = document.createElement('div');
+    modalDiv.className = 'auth-modal-overlay';
+    modalDiv.id = 'auth-config-modal';
+    
+    const curUrl = localStorage.getItem('supabase_url') || '';
+    const curKey = localStorage.getItem('supabase_anon_key') || '';
+    
+    modalDiv.innerHTML = `
+        <div class="auth-modal">
+            <h3>DATABASE CONNECTION SETTINGS</h3>
+            
+            <div class="auth-input-group">
+                <label>SUPABASE URL</label>
+                <input type="text" id="cfg-url" class="auth-input" placeholder="HTTPS://XYZ.SUPABASE.CO" value="${curUrl}"/>
+            </div>
+            
+            <div class="auth-input-group">
+                <label>SUPABASE PUBLIC ANON KEY</label>
+                <input type="text" id="cfg-key" class="auth-input" placeholder="API ANON KEY" value="${curKey}"/>
+            </div>
+            
+            <div class="auth-modal-actions">
+                <button class="auth-modal-btn" id="cfg-cancel-btn">CANCEL</button>
+                <button class="auth-modal-btn primary" id="cfg-save-btn">SAVE CONFIG</button>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modalDiv);
+    
+    document.getElementById('cfg-cancel-btn').addEventListener('click', () => {
+        modalDiv.remove();
+    });
+    
+    document.getElementById('cfg-save-btn').addEventListener('click', () => {
+        const url = document.getElementById('cfg-url').value.trim();
+        const key = document.getElementById('cfg-key').value.trim();
+        
+        if (url && key) {
+            saveConfig(url, key);
+            modalDiv.remove();
+            window.location.reload();
+        } else if (!url && !key) {
+            localStorage.removeItem('supabase_url');
+            localStorage.removeItem('supabase_anon_key');
+            modalDiv.remove();
+            window.location.reload();
+        } else {
+            alert("BOTH SUPABASE URL AND ANON KEY ARE REQUIRED.");
+        }
+    });
 }

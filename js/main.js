@@ -2,6 +2,7 @@ import { state } from './state.js';
 import { initDB } from './db.js';
 import { renderSidebar, renderDashboard, renderAllIdeas, renderTrash, openNewProjModal } from './ui.js';
 import { renderProject } from './project.js';
+import { initSupabase, getCurrentUser, syncDown, isConfigured } from './sync.js';
 
 export function nav(view, projId = null, opts = {}) {
     state.viewHistory.push(JSON.parse(JSON.stringify(state.S)));
@@ -35,7 +36,7 @@ export function render() {
     }
 }
 
-function bootApp() {
+export function bootApp() {
     const splash = document.getElementById('splash-screen');
     const appRoot = document.getElementById('app-root');
     
@@ -96,16 +97,30 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // Wait for BOTH the DB and fonts before booting.
-    // On Vercel (first load) Google font .woff2 files arrive from fonts.gstatic.com
-    // after JS is ready. Without this wait, fonts load mid-animation causing a
-    // text reflow (the "hitch"). The splash stays visible during the wait.
     const dbPromise   = new Promise(resolve => initDB(resolve));
     const fontPromise = Promise.race([
         document.fonts.ready,
         new Promise(resolve => setTimeout(resolve, 2000)) // 2s safety cap
     ]);
 
-    Promise.all([dbPromise, fontPromise]).then(() => {
-        bootApp();
+    Promise.all([dbPromise, fontPromise]).then(async () => {
+        initSupabase();
+
+        if (isConfigured()) {
+            const user = await getCurrentUser();
+            if (user) {
+                // Sync cloud data to local IndexedDB first on boot
+                await syncDown();
+                bootApp();
+            } else {
+                // If Supabase is configured but no session exists, show login screen
+                import('./ui.js').then(ui => {
+                    ui.renderAuthScreen();
+                });
+            }
+        } else {
+            // Local-only fallback
+            bootApp();
+        }
     });
 });

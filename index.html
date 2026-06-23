@@ -27,8 +27,8 @@
   
   <div id="modal-root"></div>
 
-  <!-- GSAP must be defer (not async) and listed BEFORE the module so it is
-       guaranteed to execute before main.js boots the app -->
+  <!-- Supabase & GSAP dependencies -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
   <script src="lib/gsap.min.js" defer></script>
   <script src="lib/Draggable.min.js" defer></script>
   <script src="lib/confetti.browser.min.js" defer></script>

@@ -1,5 +1,6 @@
 import { state, CHECKLIST_3D, CHECKLIST_2D, BLOCK_PALETTE } from './state.js';
 import { uid } from './utils.js';
+import { triggerCloudSync } from './sync.js';
 
 const DB_NAME = 'StudioPM_DB';
 const DB_VERSION = 2; // Incremented for archives support
@@ -107,4 +108,5 @@ export function saveAll() {
     store.put(state.projects, 'projects');
     store.put(state.ideas, 'ideas');
     store.put(state.archives, 'archives');
+    triggerCloudSync();
 }

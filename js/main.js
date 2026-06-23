@@ -65,7 +65,7 @@ export function bootApp() {
     //    and stores the paused boot timeline in window._pendingBootTL.
     render();
 
-    if (typeof gsap !== 'undefined') {
+    if (typeof gsap !== 'undefined' && !window._reduceMotion) {
         // 2. Double-RAF: give the browser one full paint cycle to commit the 
         //    DOM and GSAP inline styles while STILL BEHIND the solid splash screen.
         requestAnimationFrame(() => {
@@ -111,9 +111,14 @@ export function bootApp() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+    // APPLY GLOBAL SETTINGS
+    window._reduceMotion = localStorage.getItem('studio_reduce_motion') === 'true';
+    if (window._reduceMotion) document.body.classList.add('reduce-motion');
+    window._autoSaveDelay = parseInt(localStorage.getItem('studio_autosave_delay') || '2000');
+
     // Listen for custom global keybinds
     window.addEventListener('keydown', e => {
-        if (e.ctrlKey && e.key === 'p') { e.preventDefault(); openNewProjModal(); }
+        if (e.ctrlKey && e.key === 'p') { e.preventDefault(); import('./ui.js').then(ui => ui.openNewProjModal()); }
     });
 
     // Mobile menu drawer toggle listeners

@@ -760,4 +760,36 @@ export function renderBoard(c, p) {
 
     draw();
     drawPaths();
+
+    if (typeof gsap !== 'undefined' && !window._reduceMotion) {
+        import('./utils.js').then(({ getBootConfig }) => {
+            const cfg = getBootConfig('board');
+            window._bootedProjects = window._bootedProjects || {};
+            window._bootedProjects.board = window._bootedProjects.board || {};
+            
+            if (!window._bootedProjects.board[p.id]) {
+                const topbar = c.querySelector('.page-topbar');
+                const toolbar = c.querySelector('.canvas-toolbar');
+                
+                const toAnimate = [];
+                if (topbar) toAnimate.push(topbar);
+                if (toolbar) toAnimate.push(toolbar);
+
+                if (toAnimate.length > 0) {
+                    gsap.set(toAnimate, { y: cfg.offset, opacity: 0 });
+                    
+                    const tl = gsap.timeline();
+                    tl.to(toAnimate, {
+                        y: 0,
+                        opacity: 1,
+                        duration: cfg.duration,
+                        stagger: cfg.stagger,
+                        ease: cfg.ease
+                    });
+                    
+                    window._bootedProjects.board[p.id] = true;
+                }
+            }
+        });
+    }
 }

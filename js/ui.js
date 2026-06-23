@@ -42,8 +42,16 @@ export function renderSidebar() {
         }
     });
 
+    const bypassAuth = sessionStorage.getItem('bypass_auth') === 'true';
+    const authBtnHtml = bypassAuth 
+        ? '<button class="btn btn-ghost" id="sb-signin-btn" style="border-radius:0; font-size:9px; padding:4px 8px; font-family:\'IBM Plex Mono\', monospace;" title="Sign In"><i class="ti ti-login" style="font-size:12px;"></i> SIGN IN</button>'
+        : '<button class="btn btn-ghost" id="sb-signout-btn" style="border-radius:0; font-size:9px; padding:4px 8px; font-family:\'IBM Plex Mono\', monospace; color:#c53d3d; border-color:#522;" title="Sign Out" onmouseover="this.style.borderColor=\'#833\';this.style.color=\'#e55\'" onmouseout="this.style.borderColor=\'#522\';this.style.color=\'#c53d3d\'"><i class="ti ti-logout" style="font-size:12px;"></i> OUT</button>';
+
     sb.innerHTML = `
-    <div class="sb-logo-wrap"><div class="sb-logo">S</div></div>
+    <div class="sb-logo-wrap" style="display:flex; align-items:center; gap:12px;">
+      <div class="sb-logo">S</div>
+      ${authBtnHtml}
+    </div>
     
     <div class="sb-section" style="position:relative;">
       <div class="sb-label">WORKSPACE</div>
@@ -61,12 +69,8 @@ export function renderSidebar() {
     <div class="sb-footer" style="display:flex; flex-direction:column; gap:12px;">
        <div style="display:flex; flex-direction:column; gap:8px; border-bottom:1px solid #161616; padding-bottom:12px;">
           <div style="display:flex; gap:8px;">
-             <button class="icon-btn" id="db-export-btn" style="font-size:9px; color:#555; gap:4px; text-transform:uppercase; font-family:'IBM Plex Mono', monospace;" title="Backup Data"><i class="ti ti-download" style="font-size:12px;"></i> EXPORT</button>
-             <label class="icon-btn" style="font-size:9px; color:#555; gap:4px; text-transform:uppercase; font-family:'IBM Plex Mono', monospace; cursor:pointer;" title="Restore Data"><i class="ti ti-upload" style="font-size:12px;"></i> IMPORT<input type="file" id="db-import-btn" style="display:none;" accept=".json"></label>
-          </div>
-          <div style="display:flex; gap:8px;">
-             <button class="icon-btn" id="db-config-btn" style="font-size:9px; color:#555; gap:4px; text-transform:uppercase; font-family:'IBM Plex Mono', monospace;" title="Database Settings"><i class="ti ti-settings" style="font-size:12px;"></i> DB CONFIG</button>
-             ${isConfigured() ? '<button class="icon-btn" id="sb-signout-btn" style="font-size:9px; color:#c53d3d; gap:4px; text-transform:uppercase; font-family:\'IBM Plex Mono\', monospace;" title="Sign Out"><i class="ti ti-logout" style="font-size:12px;"></i> OUT</button>' : ''}
+             <button class="icon-btn" id="sb-settings-btn" style="font-size:9px; color:#555; gap:4px; text-transform:uppercase; font-family:'IBM Plex Mono', monospace;" title="Settings"><i class="ti ti-settings" style="font-size:12px;"></i> SETTINGS</button>
+             <button class="icon-btn" id="sb-replay-boot-btn" style="font-size:9px; color:#555; gap:4px; text-transform:uppercase; font-family:'IBM Plex Mono', monospace;" title="Replay Animation"><i class="ti ti-player-play" style="font-size:12px;"></i> REPLAY</button>
           </div>
        </div>
        <div id="sb-clock" style="color:#333;">${formatDateTime(new Date().toISOString())}</div>
@@ -77,50 +81,62 @@ export function renderSidebar() {
     sb.querySelector('#sb-allideas').addEventListener('click', () => nav('all-ideas'));
     sb.querySelector('#sb-trash').addEventListener('click', () => nav('trash'));
 
-    sb.querySelector('#db-export-btn').addEventListener('click', () => {
-        const data = { projects: state.projects, ideas: state.ideas, archives: state.archives };
-        const blob = new Blob([JSON.stringify(data)], { type: 'application/json' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `StudioPM_Backup_${new Date().toISOString().slice(0,10)}.json`;
-        a.click();
-        URL.revokeObjectURL(url);
+    sb.querySelector('#sb-settings-btn').addEventListener('click', () => {
+        openSettingsModal();
     });
 
-    sb.querySelector('#db-import-btn').addEventListener('change', e => {
-        const f = e.target.files[0];
-        if (!f) return;
-        const r = new FileReader();
-        r.onload = ev => {
-            try {
-                const data = JSON.parse(ev.target.result);
-                if (data.projects) state.projects = data.projects;
-                if (data.ideas) state.ideas = data.ideas;
-                if (data.archives) state.archives = data.archives;
-                saveAll();
-                renderSidebar();
-                import('./main.js').then(m => { m.nav('dashboard'); m.render(); });
-            } catch(err) {
-                openConfirmModal("Error", "Failed to parse JSON file.", "OK", () => {});
-            }
-        };
-        r.readAsText(f);
-        e.target.value = '';
-    });
-
-    sb.querySelector('#db-config-btn').addEventListener('click', () => {
-        openDbConfigModal();
-    });
-
-    if (isConfigured()) {
-        const signOutBtn = sb.querySelector('#sb-signout-btn');
-        if (signOutBtn) {
-            signOutBtn.addEventListener('click', async () => {
-                await signOut();
-                window.location.reload();
+    sb.querySelector('#sb-replay-boot-btn').addEventListener('click', () => {
+        if (window._reduceMotion || typeof gsap === 'undefined') return;
+        
+        const view = state.S.view;
+        const pId = state.S.projectId;
+        const tab = state.S.tab;
+        
+        if (view === 'dashboard' || view === 'all-ideas' || view === 'trash') {
+            window._appHasBooted = false;
+            document.body.classList.add('is-booting');
+            import('./main.js').then(m => {
+                m.render();
+                setTimeout(() => {
+                    document.body.classList.remove('is-booting');
+                    if (window._pendingBootTL) {
+                        window._pendingBootTL.play();
+                        window._pendingBootTL = null;
+                    }
+                }, 50);
             });
+        } else if (view === 'project' && window._bootedProjects) {
+            if (tab === 'overview' && window._bootedProjects.overview) {
+                window._bootedProjects.overview[pId] = false;
+            } else if (tab === 'script' && window._bootedProjects.vs) {
+                window._bootedProjects.vs[pId] = false;
+            } else if (tab === 'board' && window._bootedProjects.board) {
+                window._bootedProjects.board[pId] = false;
+            } else if (tab === 'shots' && window._bootedProjects.shots) {
+                if (state.S.shotId && window._bootedProjects.shotDetail) {
+                    window._bootedProjects.shotDetail[state.S.shotId] = false;
+                } else {
+                    window._bootedProjects.shots[pId] = false;
+                }
+            }
+            import('./main.js').then(m => m.render());
         }
+    });
+
+    const signOutBtn = sb.querySelector('#sb-signout-btn');
+    if (signOutBtn) {
+        signOutBtn.addEventListener('click', async () => {
+            await signOut();
+            window.location.reload();
+        });
+    }
+
+    const signInBtn = sb.querySelector('#sb-signin-btn');
+    if (signInBtn) {
+        signInBtn.addEventListener('click', () => {
+            sessionStorage.removeItem('bypass_auth');
+            window.location.reload();
+        });
     }
 
     sb.querySelectorAll('.sb-proj-header').forEach(el => {
@@ -134,13 +150,18 @@ export function renderSidebar() {
             const navEl = el.nextElementSibling;
 
             if (isExpanded && navEl && navEl.classList.contains('sb-proj-nav')) {
-                if (typeof gsap !== 'undefined') gsap.to(navEl, {
-                    height: 0, opacity: 0, duration: 0.35, ease: "power2.inOut",
-                    onComplete: () => {
-                        state.expandedProjectsState = state.expandedProjectsState.filter(id => id !== pid);
-                        renderSidebar();
-                    }
-                });
+                if (typeof gsap !== 'undefined' && !window._reduceMotion) {
+                    gsap.to(navEl, {
+                        height: 0, opacity: 0, duration: 0.35, ease: "power2.inOut",
+                        onComplete: () => {
+                            state.expandedProjectsState = state.expandedProjectsState.filter(id => id !== pid);
+                            renderSidebar();
+                        }
+                    });
+                } else {
+                    state.expandedProjectsState = state.expandedProjectsState.filter(id => id !== pid);
+                    renderSidebar();
+                }
             } else if (!isExpanded) {
                 state.expandedProjectsState.push(pid);
                 window._gsapTargetId = pid;
@@ -164,7 +185,7 @@ export function renderSidebar() {
         });
     });
 
-    if (window._gsapTargetId && typeof gsap !== 'undefined') {
+    if (window._gsapTargetId && typeof gsap !== 'undefined' && !window._reduceMotion) {
         const openedHeader = sb.querySelector(`.sb-proj-header[data-toggle-pid="${window._gsapTargetId}"]`);
         if (openedHeader && openedHeader.nextElementSibling) {
             gsap.from(openedHeader.nextElementSibling, { height: 0, opacity: 0, duration: 0.4, ease: "back.out(1.5)" });
@@ -176,7 +197,7 @@ export function renderSidebar() {
     const activeNav = sb.querySelector('.sb-proj-nav-item.active');
     const indicator = sb.querySelector('.nav-indicator');
 
-    if (activeNav && indicator && typeof gsap !== 'undefined') {
+    if (activeNav && indicator && typeof gsap !== 'undefined' && !window._reduceMotion) {
         const targetY = activeNav.offsetTop;
         if (window._lastNavY === undefined || window._lastNavPid !== state.S.projectId) {
             gsap.set(indicator, { y: targetY });
@@ -190,7 +211,7 @@ export function renderSidebar() {
     const topActiveNav = sb.querySelector('#sb-home.active, #sb-allideas.active, #sb-trash.active');
     const topBgHighlight = sb.querySelector('.workspace-bg-highlight');
 
-    if (topActiveNav && topBgHighlight && typeof gsap !== 'undefined') {
+    if (topActiveNav && topBgHighlight && typeof gsap !== 'undefined' && !window._reduceMotion) {
         const targetY = topActiveNav.offsetTop;
         gsap.set(topBgHighlight, { width: topActiveNav.offsetWidth, height: topActiveNav.offsetHeight, left: topActiveNav.offsetLeft });
         if (window._lastTopBgY === undefined) {
@@ -245,36 +266,42 @@ export function renderDashboard(m) {
     document.getElementById('idea-send-btn').addEventListener('click', handleIdeaSend);
     document.getElementById('idea-inp').addEventListener('keydown', e => { if (e.key === 'Enter') handleIdeaSend(); });
 
-    if (typeof gsap !== 'undefined' && !window._appHasBooted) {
-        const cards = m.querySelectorAll('.project-card, .new-card');
-        const topbarBtn = m.querySelector('#btn-new-proj');
-        const dashTitle = m.querySelector('.welcome h1');
-        const dashSub = m.querySelector('.welcome p');
-        const headers = m.querySelectorAll('.dash-section-header');
-        const ideas = m.querySelectorAll('.idea-input-row, .dash-idea-row');
-        const sidebarItems = document.querySelectorAll('.sidebar .sb-logo-wrap, .sidebar .sb-label, .sidebar .sb-item, .sidebar .sb-proj-header, .sidebar .sb-footer');
+    if (typeof gsap !== 'undefined' && !window._reduceMotion && !window._appHasBooted) {
+        import('./utils.js').then(({ getBootConfig }) => {
+            const cfg = getBootConfig('dashboard');
+            const cards = m.querySelectorAll('.project-card, .new-card');
+            const topbarBtn = m.querySelector('#btn-new-proj');
+            const dashTitle = m.querySelector('.welcome h1');
+            const dashSub = m.querySelector('.welcome p');
+            const headers = m.querySelectorAll('.dash-section-header');
+            const ideas = m.querySelectorAll('.idea-input-row, .dash-idea-row');
+            const sidebarItems = document.querySelectorAll('.sidebar .sb-logo-wrap, .sidebar .sb-label, .sidebar .sb-item, .sidebar .sb-proj-header, .sidebar .sb-footer');
 
-        // Hide all elements FIRST (synchronous, immediate) —
-        // these styles are committed before the app root is revealed
-        gsap.set(cards, { opacity: 0, y: 50 });
-        gsap.set(topbarBtn, { opacity: 0, y: -20 });
-        gsap.set([dashTitle, dashSub], { clipPath: "polygon(0% -50%, 0% -50%, 0% 150%, 0% 150%)" });
-        gsap.set(headers, { opacity: 0, y: 10 });
-        gsap.set(ideas, { opacity: 0, y: 50 });
-        gsap.set(sidebarItems, { opacity: 0, y: 40 });
+            // Hide all elements FIRST (synchronous, immediate)
+            gsap.set(cards, { opacity: 0, y: cfg.offset });
+            gsap.set(topbarBtn, { opacity: 0, y: -20 });
+            gsap.set([dashTitle, dashSub], { clipPath: "polygon(0% -50%, 0% -50%, 0% 150%, 0% 150%)" });
+            gsap.set(headers, { opacity: 0, y: 10 });
+            gsap.set(ideas, { opacity: 0, y: cfg.offset });
+            gsap.set(sidebarItems, { opacity: 0, y: 40 });
 
-        // Build the timeline PAUSED — bootApp will play() it after the first
-        // browser paint with the hidden elements, eliminating any flash
-        const tl = gsap.timeline({ paused: true });
-        tl.to(cards, { y: 0, opacity: 1, duration: 0.5, stagger: 0.2, ease: "back.out(1.2)" }, 0);
-        tl.to(dashTitle, { clipPath: "polygon(0% -50%, 110% -50%, 110% 150%, 0% 150%)", duration: 0.8, ease: "back.out(1.2)" }, 0.1)
-            .to(dashSub, { clipPath: "polygon(0% -50%, 110% -50%, 110% 150%, 0% 150%)", duration: 0.8, ease: "back.out(1.2)" }, 0.2);
-        tl.to(sidebarItems, { y: 0, opacity: 1, duration: 0.5, stagger: 0.03, ease: "back.out(1.2)" }, 0.15);
-        tl.to(topbarBtn, { y: 0, opacity: 1, duration: 0.5, ease: "back.out(1.2)" }, 0.2);
-        tl.to(headers, { y: 0, opacity: 1, duration: 0.5, stagger: 0.1, ease: "back.out(1.2)" }, 0.5)
-            .to(ideas, { y: 0, opacity: 1, duration: 0.5, stagger: 0.05, ease: "back.out(1.2)" }, 0.2);
+            // Build the timeline PAUSED
+            const tl = gsap.timeline({ paused: true });
+            tl.to(cards, { y: 0, opacity: 1, duration: cfg.duration, stagger: cfg.stagger, ease: cfg.ease }, 0);
+            tl.to(dashTitle, { clipPath: "polygon(0% -50%, 110% -50%, 110% 150%, 0% 150%)", duration: 0.8, ease: "back.out(1.2)" }, 0.1)
+                .to(dashSub, { clipPath: "polygon(0% -50%, 110% -50%, 110% 150%, 0% 150%)", duration: 0.8, ease: "back.out(1.2)" }, 0.2);
+            tl.to(sidebarItems, { y: 0, opacity: 1, duration: cfg.duration, stagger: cfg.stagger * 0.3, ease: cfg.ease }, 0.15);
+            tl.to(topbarBtn, { y: 0, opacity: 1, duration: cfg.duration, ease: cfg.ease }, 0.2);
+            tl.to(headers, { y: 0, opacity: 1, duration: cfg.duration, stagger: cfg.stagger, ease: cfg.ease }, 0.5)
+                .to(ideas, { y: 0, opacity: 1, duration: cfg.duration, stagger: cfg.stagger * 0.5, ease: cfg.ease }, 0.2);
 
-        window._pendingBootTL = tl;
+            window._pendingBootTL = tl;
+            // Since this is async (import), if the bootApp() was already called synchronously by main.js, 
+            // we should manually play it now. But bootApp uses setTimeout 50ms, so it might be fine.
+            if (!document.body.classList.contains('is-booting')) {
+                tl.play();
+            }
+        });
         window._appHasBooted = true;
     }
 }
@@ -725,6 +752,23 @@ export function renderAuthScreen() {
         if (bypassBtn) {
             bypassBtn.addEventListener('click', () => {
                 sessionStorage.setItem('bypass_auth', 'true');
+                // Restore the original app DOM structure that renderAuthScreen destroyed
+                const appRoot = document.getElementById('app-root');
+                if (appRoot) {
+                    appRoot.innerHTML = `
+                        <div class="sidebar-overlay" id="sidebar-overlay"></div>
+                        <div class="sidebar" id="sidebar"></div>
+                        <div class="main" id="main"></div>
+                    `;
+                    appRoot.style.opacity = '0';
+                }
+                // Re-bind mobile sidebar overlay listener (since DOM was recreated)
+                const newOverlay = document.getElementById('sidebar-overlay');
+                if (newOverlay && appRoot) {
+                    newOverlay.addEventListener('click', () => {
+                        appRoot.classList.remove('sidebar-open');
+                    });
+                }
                 import('./main.js').then(m => {
                     m.bootApp();
                 });
@@ -745,7 +789,7 @@ export function renderAuthScreen() {
     document.body.classList.remove('is-booting');
     
     if (splash) {
-        if (typeof gsap !== 'undefined') {
+        if (typeof gsap !== 'undefined' && !window._reduceMotion) {
             gsap.to(splash, {
                 opacity: 0, duration: 0.6, ease: "power2.inOut",
                 onComplete: () => { splash.style.display = 'none'; }
@@ -779,11 +823,36 @@ async function handleAuthSubmit() {
         if (isSignUpMode) {
             await signUp(email, password);
             statusEl.className = "auth-status-msg success";
-            statusEl.innerText = "REGISTRATION SUCCESSFUL. CHECK YOUR EMAIL FOR CONFIRMATION.";
+            statusEl.innerText = "ACCOUNT CREATED. LOGGING YOU IN...";
+
+            // Auto sign-in after signup (email confirmation is disabled)
+            try {
+                await signIn(email, password);
+                await syncDown();
+
+                // Reinitialize DOM layout
+                const appRoot = document.getElementById('app-root');
+                appRoot.innerHTML = `
+                    <div class="sidebar-overlay" id="sidebar-overlay"></div>
+                    <div class="sidebar" id="sidebar"></div>
+                    <div class="main" id="main"></div>
+                `;
+                // Re-bind mobile sidebar overlay listener
+                const newOverlay = document.getElementById('sidebar-overlay');
+                if (newOverlay && appRoot) {
+                    newOverlay.addEventListener('click', () => {
+                        appRoot.classList.remove('sidebar-open');
+                    });
+                }
+                bootApp();
+            } catch (loginErr) {
+                statusEl.className = "auth-status-msg success";
+                statusEl.innerText = "ACCOUNT CREATED. PLEASE SIGN IN.";
+            }
         } else {
             await signIn(email, password);
             statusEl.className = "auth-status-msg success";
-            statusEl.innerText = "AUTHENTICATED successfully.";
+            statusEl.innerText = "AUTHENTICATED SUCCESSFULLY.";
             
             // Sync down user state
             await syncDown();
@@ -791,9 +860,17 @@ async function handleAuthSubmit() {
             // Reinitialize DOM layout
             const appRoot = document.getElementById('app-root');
             appRoot.innerHTML = `
+                <div class="sidebar-overlay" id="sidebar-overlay"></div>
                 <div class="sidebar" id="sidebar"></div>
                 <div class="main" id="main"></div>
             `;
+            // Re-bind mobile sidebar overlay listener
+            const newOverlay = document.getElementById('sidebar-overlay');
+            if (newOverlay && appRoot) {
+                newOverlay.addEventListener('click', () => {
+                    appRoot.classList.remove('sidebar-open');
+                });
+            }
             bootApp();
         }
     } catch (err) {
@@ -855,5 +932,290 @@ export function openDbConfigModal() {
         } else {
             alert("BOTH SUPABASE URL AND ANON KEY ARE REQUIRED.");
         }
+    });
+    // end openDbConfigModal implementation
+}
+let lastSettingsMainTab = 'tab-account';
+let lastBootTab = 'dashboard';
+
+export function openSettingsModal() {
+    const modalDiv = document.createElement('div');
+    modalDiv.className = 'modal-overlay';
+    modalDiv.style.zIndex = '9999';
+    modalDiv.innerHTML = `
+        <div class="modal" style="width:500px; padding:0; display:flex; flex-direction:column; overflow:hidden;">
+            <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #161616; padding:16px 20px;">
+                <h2 style="margin:0; font-family:'IBM Plex Mono', monospace; font-size:12px; letter-spacing:1px; color:#ddd;">GLOBAL SETTINGS</h2>
+                <button class="icon-btn" id="close-settings-btn"><i class="ti ti-x"></i></button>
+            </div>
+            <div style="display:flex; flex:1; min-height:300px;">
+                <!-- Tabs -->
+                <div style="width:140px; border-right:1px solid #161616; display:flex; flex-direction:column; padding:12px 0;">
+                    <button class="btn btn-ghost settings-tab ${lastSettingsMainTab==='tab-account'?'active':''}" data-tab="tab-account" style="justify-content:flex-start; border:none; border-radius:0; padding:10px 20px; font-family:'IBM Plex Mono', monospace; font-size:10px; background:${lastSettingsMainTab==='tab-account'?'#111':'transparent'}">ACCOUNT</button>
+                    <button class="btn btn-ghost settings-tab ${lastSettingsMainTab==='tab-data'?'active':''}" data-tab="tab-data" style="justify-content:flex-start; border:none; border-radius:0; padding:10px 20px; font-family:'IBM Plex Mono', monospace; font-size:10px; background:${lastSettingsMainTab==='tab-data'?'#111':'transparent'}">DATA & BACKUP</button>
+                    <button class="btn btn-ghost settings-tab ${lastSettingsMainTab==='tab-appearance'?'active':''}" data-tab="tab-appearance" style="justify-content:flex-start; border:none; border-radius:0; padding:10px 20px; font-family:'IBM Plex Mono', monospace; font-size:10px; background:${lastSettingsMainTab==='tab-appearance'?'#111':'transparent'}">APPEARANCE</button>
+                    <button class="btn btn-ghost settings-tab ${lastSettingsMainTab==='tab-pref'?'active':''}" data-tab="tab-pref" style="justify-content:flex-start; border:none; border-radius:0; padding:10px 20px; font-family:'IBM Plex Mono', monospace; font-size:10px; background:${lastSettingsMainTab==='tab-pref'?'#111':'transparent'}">PREFERENCES</button>
+                    <button class="btn btn-ghost settings-tab ${lastSettingsMainTab==='tab-boot'?'active':''}" data-tab="tab-boot" style="justify-content:flex-start; border:none; border-radius:0; padding:10px 20px; font-family:'IBM Plex Mono', monospace; font-size:10px; background:${lastSettingsMainTab==='tab-boot'?'#111':'transparent'}">BOOT ANIMATION</button>
+                </div>
+                <!-- Content -->
+                <div style="flex:1; padding:20px; background:#0B0B0B; position:relative;">
+                    
+                    <div id="tab-account" class="settings-content" style="display:${lastSettingsMainTab==='tab-account'?'block':'none'};">
+                        <div class="sec-label">Danger Zone</div>
+                        <p style="font-size:11px; color:#666; margin-bottom:12px;">Deleting your account will permanently wipe all your data from the cloud. This cannot be undone.</p>
+                        <button class="btn btn-danger" id="init-delete-btn" style="width:100%; font-family:'IBM Plex Mono', monospace; justify-content:center;">DELETE ACCOUNT</button>
+                        
+                        <div id="delete-confirm-zone" style="display:none; margin-top:16px; border:1px solid #c53d3d; padding:16px; background:rgba(197, 61, 61, 0.05);">
+                            <p style="font-size:11px; color:#c53d3d; margin-bottom:8px;">Type <strong>DELETE</strong> below to confirm:</p>
+                            <input type="text" id="delete-confirm-input" class="idea-input" style="width:100%; margin-bottom:12px; text-transform:uppercase;" autocomplete="off" />
+                            <button class="btn btn-danger" id="final-delete-btn" disabled style="width:100%; justify-content:center;">PERMANENTLY DELETE</button>
+                        </div>
+                    </div>
+
+                    <div id="tab-data" class="settings-content" style="display:none;">
+                        <div class="sec-label">Backup & Restore</div>
+                        <button class="btn btn-ghost" id="stgs-export-btn" style="width:100%; margin-bottom:12px; justify-content:center; font-family:'IBM Plex Mono', monospace;"><i class="ti ti-download"></i> EXPORT DATA (.JSON)</button>
+                        <label class="btn btn-ghost" style="width:100%; justify-content:center; cursor:pointer; margin-bottom:24px; font-family:'IBM Plex Mono', monospace;"><i class="ti ti-upload"></i> IMPORT DATA<input type="file" id="stgs-import-btn" style="display:none;" accept=".json"></label>
+                        
+                        <div class="sec-label" style="color:#c53d3d;">Local Cache</div>
+                        <p style="font-size:11px; color:#666; margin-bottom:12px;">Wipes the offline IndexedDB. (Will re-sync from cloud on next login).</p>
+                        <button class="btn btn-ghost" id="stgs-wipe-btn" style="width:100%; color:#c53d3d; border-color:#522; justify-content:center; font-family:'IBM Plex Mono', monospace;">WIPE LOCAL CACHE</button>
+                    </div>
+
+                    <div id="tab-appearance" class="settings-content" style="display:${lastSettingsMainTab==='tab-appearance'?'block':'none'};">
+                        <div class="sec-label" style="margin-top:24px;">Animations</div>
+                        <label style="display:flex; align-items:center; gap:8px; font-size:11px; cursor:pointer;">
+                            <input type="checkbox" id="reduce-motion-chk"> Reduce Motion (Disable GSAP)
+                        </label>
+                    </div>
+
+                    <div id="tab-pref" class="settings-content" style="display:${lastSettingsMainTab==='tab-pref'?'block':'none'};">
+                        <div class="sec-label" style="margin-top:24px;">Auto-Save Delay</div>
+                        <select id="autosave-sel" class="idea-input" style="width:100%;">
+                            <option value="1000">1 Second (Aggressive)</option>
+                            <option value="2000">2 Seconds (Default)</option>
+                            <option value="5000">5 Seconds (Relaxed)</option>
+                        </select>
+                    </div>
+
+                    <div id="tab-boot" class="settings-content" style="display:${lastSettingsMainTab==='tab-boot'?'block':'none'};">
+                        <div class="sec-label">Boot Sequence Config</div>
+                        <div style="display:flex; border-bottom:1px solid #161616; margin-bottom:16px;">
+                            <button class="btn btn-ghost boot-tab ${lastBootTab==='dashboard'?'active':''}" data-btab="dashboard" style="border-radius:0; padding:8px 8px; font-size:9px; color:${lastBootTab==='dashboard'?'#fff':'#888'};">DASHBOARD</button>
+                            <button class="btn btn-ghost boot-tab ${lastBootTab==='overview'?'active':''}" data-btab="overview" style="border-radius:0; padding:8px 8px; font-size:9px; color:${lastBootTab==='overview'?'#fff':'#888'};">OVERVIEW</button>
+                            <button class="btn btn-ghost boot-tab ${lastBootTab==='script'?'active':''}" data-btab="script" style="border-radius:0; padding:8px 8px; font-size:9px; color:${lastBootTab==='script'?'#fff':'#888'};">SCRIPT</button>
+                            <button class="btn btn-ghost boot-tab ${lastBootTab==='board'?'active':''}" data-btab="board" style="border-radius:0; padding:8px 8px; font-size:9px; color:${lastBootTab==='board'?'#fff':'#888'};">BOARD</button>
+                            <button class="btn btn-ghost boot-tab ${lastBootTab==='shots'?'active':''}" data-btab="shots" style="border-radius:0; padding:8px 8px; font-size:9px; color:${lastBootTab==='shots'?'#fff':'#888'};">SHOTS</button>
+                        </div>
+                        <div id="boot-settings-container" style="display:flex; flex-direction:column; gap:16px;">
+                            <!-- populated dynamically -->
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(modalDiv);
+
+    document.getElementById('close-settings-btn').addEventListener('click', () => modalDiv.remove());
+    modalDiv.addEventListener('mousedown', (e) => {
+        if (e.target === modalDiv) {
+            modalDiv.remove();
+        }
+    });
+
+    const tabs = modalDiv.querySelectorAll('.settings-tab');
+    const contents = modalDiv.querySelectorAll('.settings-content');
+    tabs.forEach(t => {
+        t.addEventListener('click', () => {
+            tabs.forEach(btn => {
+                btn.style.background = 'transparent';
+                btn.classList.remove('active');
+            });
+            t.style.background = '#111';
+            t.classList.add('active');
+            contents.forEach(c => c.style.display = 'none');
+            const target = document.getElementById(t.dataset.tab);
+            if (target) target.style.display = 'block';
+            lastSettingsMainTab = t.dataset.tab;
+        });
+    });
+
+    import('./utils.js').then(({ getBootConfig }) => {
+        const bootTabs = modalDiv.querySelectorAll('.boot-tab');
+        const bootCont = document.getElementById('boot-settings-container');
+        let currentBootTab = lastBootTab;
+        
+        const renderBootSettings = () => {
+            if (!bootCont) return;
+            const cfg = getBootConfig(currentBootTab);
+            
+            bootCont.innerHTML = `
+                <div style="display:flex; flex-direction:column; gap:8px;">
+                    <label style="font-size:11px; display:flex; justify-content:space-between; color:#aaa;">Offset (Y pixels) <span id="val-off" style="color:#fff;">${cfg.offset}</span></label>
+                    <input type="range" id="boot-offset" min="0" max="200" step="5" value="${cfg.offset}" style="width:100%; accent-color:var(--accent-blue);" />
+                </div>
+                <div style="display:flex; flex-direction:column; gap:8px;">
+                    <label style="font-size:11px; display:flex; justify-content:space-between; color:#aaa;">Stagger (seconds) <span id="val-stag" style="color:#fff;">${cfg.stagger}</span></label>
+                    <input type="range" id="boot-stagger" min="0" max="0.5" step="0.01" value="${cfg.stagger}" style="width:100%; accent-color:var(--accent-blue);" />
+                </div>
+                <div style="display:flex; flex-direction:column; gap:8px;">
+                    <label style="font-size:11px; display:flex; justify-content:space-between; color:#aaa;">Duration (seconds) <span id="val-dur" style="color:#fff;">${cfg.duration}</span></label>
+                    <input type="range" id="boot-dur" min="0.1" max="2" step="0.1" value="${cfg.duration}" style="width:100%; accent-color:var(--accent-blue);" />
+                </div>
+                <div style="display:flex; flex-direction:column; gap:8px;">
+                    <label style="font-size:11px; color:#aaa;">Easing Curve</label>
+                    <select id="boot-ease" class="idea-input" style="width:100%; font-family:'IBM Plex Mono', monospace; font-size:11px; padding:6px; height:auto; color:#fff;">
+                        <option value="back.out(1.2)" ${cfg.ease==='back.out(1.2)'?'selected':''}>Back Out</option>
+                        <option value="power2.out" ${cfg.ease==='power2.out'?'selected':''}>Power2 Out</option>
+                        <option value="power3.out" ${cfg.ease==='power3.out'?'selected':''}>Power3 Out</option>
+                        <option value="elastic.out(1, 0.5)" ${cfg.ease==='elastic.out(1, 0.5)'?'selected':''}>Elastic Out</option>
+                        <option value="bounce.out" ${cfg.ease==='bounce.out'?'selected':''}>Bounce Out</option>
+                    </select>
+                </div>
+                <div style="display:flex; justify-content:flex-end; margin-top:8px;">
+                    <button class="btn btn-ghost" id="boot-reset" style="font-size:10px;"><i class="ti ti-refresh"></i> RESET DEFAULTS</button>
+                </div>
+            `;
+            
+            const saveCfg = () => {
+                const o = parseInt(document.getElementById('boot-offset').value);
+                const s = parseFloat(document.getElementById('boot-stagger').value);
+                const d = parseFloat(document.getElementById('boot-dur').value);
+                const e = document.getElementById('boot-ease').value;
+                document.getElementById('val-off').innerText = o;
+                document.getElementById('val-stag').innerText = s;
+                document.getElementById('val-dur').innerText = d;
+                
+                try {
+                    const stored = JSON.parse(localStorage.getItem('studio_boot_settings') || '{}');
+                    if (!stored[currentBootTab]) stored[currentBootTab] = {};
+                    stored[currentBootTab] = { offset: o, stagger: s, duration: d, ease: e };
+                    localStorage.setItem('studio_boot_settings', JSON.stringify(stored));
+                } catch(err) {}
+            };
+            
+            document.getElementById('boot-offset').addEventListener('input', saveCfg);
+            document.getElementById('boot-stagger').addEventListener('input', saveCfg);
+            document.getElementById('boot-dur').addEventListener('input', saveCfg);
+            document.getElementById('boot-ease').addEventListener('change', saveCfg);
+            
+            document.getElementById('boot-reset').addEventListener('click', () => {
+                try {
+                    const stored = JSON.parse(localStorage.getItem('studio_boot_settings') || '{}');
+                    delete stored[currentBootTab];
+                    localStorage.setItem('studio_boot_settings', JSON.stringify(stored));
+                } catch(err) {}
+                renderBootSettings();
+            });
+        };
+        
+        bootTabs.forEach(t => t.addEventListener('click', () => {
+            bootTabs.forEach(b => { b.style.color = '#888'; b.classList.remove('active'); });
+            t.style.color = '#fff';
+            t.classList.add('active');
+            currentBootTab = t.dataset.btab;
+            lastBootTab = currentBootTab;
+            renderBootSettings();
+        }));
+        
+        renderBootSettings();
+    });
+
+    const initDelBtn = document.getElementById('init-delete-btn');
+    const confZone = document.getElementById('delete-confirm-zone');
+    const confInput = document.getElementById('delete-confirm-input');
+    const finalDelBtn = document.getElementById('final-delete-btn');
+
+    if (initDelBtn) {
+        initDelBtn.addEventListener('click', () => {
+            initDelBtn.style.display = 'none';
+            confZone.style.display = 'block';
+        });
+    }
+
+    if (confInput) {
+        confInput.addEventListener('input', () => {
+            finalDelBtn.disabled = confInput.value !== 'DELETE';
+        });
+    }
+
+    if (finalDelBtn) {
+        finalDelBtn.addEventListener('click', async () => {
+            finalDelBtn.innerHTML = `<i class="ti ti-loader" style="animation: spin 1s linear infinite;"></i> DELETING...`;
+            import('./sync.js').then(async sync => {
+                await sync.deleteUserAccount();
+                modalDiv.remove();
+                window.location.reload();
+            });
+        });
+    }
+
+    const exportBtn = document.getElementById('stgs-export-btn');
+    if (exportBtn) {
+        exportBtn.addEventListener('click', () => {
+            const data = { projects: state.projects, ideas: state.ideas, archives: state.archives };
+            const blob = new Blob([JSON.stringify(data)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `StudioPM_Backup_${new Date().toISOString().slice(0,10)}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+        });
+    }
+
+    const importBtn = document.getElementById('stgs-import-btn');
+    if (importBtn) {
+        importBtn.addEventListener('change', e => {
+            const f = e.target.files[0];
+            if (!f) return;
+            const r = new FileReader();
+            r.onload = ev => {
+                try {
+                    const data = JSON.parse(ev.target.result);
+                    if (data.projects) state.projects = data.projects;
+                    if (data.ideas) state.ideas = data.ideas;
+                    if (data.archives) state.archives = data.archives;
+                    import('./db.js').then(db => db.saveAll());
+                    renderSidebar();
+                    import('./main.js').then(m => { m.nav('dashboard'); m.render(); modalDiv.remove(); });
+                } catch(err) {
+                    alert("Failed to parse JSON file.");
+                }
+            };
+            r.readAsText(f);
+            e.target.value = '';
+        });
+    }
+
+    const wipeBtn = document.getElementById('stgs-wipe-btn');
+    if (wipeBtn) {
+        wipeBtn.addEventListener('click', () => {
+            if (confirm("Are you sure you want to wipe the local cache?")) {
+                const req = indexedDB.deleteDatabase('StudioPM');
+                req.onsuccess = () => window.location.reload();
+            }
+        });
+    }
+    
+    // ─── Toggles & Prefs ───
+    const motionChk = document.getElementById('reduce-motion-chk');
+    motionChk.checked = localStorage.getItem('studio_reduce_motion') === 'true';
+    motionChk.addEventListener('change', e => {
+        localStorage.setItem('studio_reduce_motion', e.target.checked);
+        if (e.target.checked) window._reduceMotion = true;
+        else window._reduceMotion = false;
+        
+        document.body.classList.toggle('reduce-motion', e.target.checked);
+    });
+    
+    const autosaveSel = document.getElementById('autosave-sel');
+    autosaveSel.value = localStorage.getItem('studio_autosave_delay') || '2000';
+    autosaveSel.addEventListener('change', e => {
+        localStorage.setItem('studio_autosave_delay', e.target.value);
+        window._autoSaveDelay = parseInt(e.target.value);
     });
 }

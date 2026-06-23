@@ -109,6 +109,24 @@ export async function deleteArchiveFromCloud(aid) {
 }
 
 // ─── CLOUD SYNC OPERATIONS ───
+export async function deleteUserAccount() {
+    const supabase = getClient();
+    if (!supabase) return;
+    const user = await getCurrentUser();
+    if (!user) return;
+    
+    // Wipe their data from tables
+    await supabase.from('projects').delete().eq('user_id', user.id);
+    await supabase.from('ideas').delete().eq('user_id', user.id);
+    await supabase.from('archives').delete().eq('user_id', user.id);
+    
+    // Attempt to call delete_user RPC if it exists
+    try {
+        await supabase.rpc('delete_user');
+    } catch(e) {}
+    
+    await signOut();
+}
 async function pushProject(p, userId) {
     const supabase = getClient();
     if (!supabase) return;
@@ -121,6 +139,7 @@ async function pushProject(p, userId) {
         pinned: !!p.pinned,
         visualScriptBlocks: p.visualScriptBlocks || [],
         shots: p.shots || [],
+        ideas: p.ideas || [],
         lastEdited: p.lastEdited || new Date().toISOString()
     });
     if (error) console.error(`Error syncing project ${p.id}:`, error);
@@ -173,7 +192,7 @@ export function triggerCloudSync() {
             await pushArchive(a, user.id);
         }
         console.log("Background cloud sync complete.");
-    }, 2000);
+    }, window._autoSaveDelay || 2000);
 }
 
 export async function syncDown() {

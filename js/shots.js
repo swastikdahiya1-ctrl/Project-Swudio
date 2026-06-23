@@ -299,6 +299,40 @@ export function renderShots(c, p) {
             return false;
         });
     });
+
+    if (typeof gsap !== 'undefined' && !window._reduceMotion) {
+        import('./utils.js').then(({ getBootConfig }) => {
+            const cfg = getBootConfig('shots');
+            window._bootedProjects = window._bootedProjects || {};
+            window._bootedProjects.shots = window._bootedProjects.shots || {};
+            
+            if (!window._bootedProjects.shots[p.id]) {
+                const header = c.querySelector('.shots-header-revamp');
+                const dashBar = c.querySelector('.shots-dash-bar-revamp');
+                const cards = Array.from(c.querySelectorAll('.shot-card-revamp'));
+                
+                const toAnimate = [];
+                if (header) toAnimate.push(header);
+                if (dashBar) toAnimate.push(dashBar);
+                if (cards.length > 0) toAnimate.push(...cards);
+
+                if (toAnimate.length > 0) {
+                    gsap.set(toAnimate, { y: cfg.offset, opacity: 0 });
+                    
+                    const tl = gsap.timeline();
+                    tl.to(toAnimate, {
+                        y: 0,
+                        opacity: 1,
+                        duration: cfg.duration,
+                        stagger: cfg.stagger,
+                        ease: cfg.ease
+                    });
+                    
+                    window._bootedProjects.shots[p.id] = true;
+                }
+            }
+        });
+    }
 }
 
 function renderShotDetail(c, p, sid) {
@@ -644,4 +678,38 @@ function renderShotDetail(c, p, sid) {
             }
         });
     });
+
+    if (typeof gsap !== 'undefined' && !window._reduceMotion) {
+        import('./utils.js').then(({ getBootConfig }) => {
+            const cfg = getBootConfig('shots');
+            window._bootedProjects = window._bootedProjects || {};
+            window._bootedProjects.shotDetail = window._bootedProjects.shotDetail || {};
+            
+            if (!window._bootedProjects.shotDetail[sid]) {
+                const topNav = c.querySelector('.shot-top-nav');
+                const mainCol = c.querySelector('.shot-main-col');
+                const sideCol = c.querySelector('.shot-side-col');
+                
+                const toAnimate = [];
+                if (topNav) toAnimate.push(topNav);
+                if (mainCol) toAnimate.push(mainCol);
+                if (sideCol) toAnimate.push(sideCol);
+
+                if (toAnimate.length > 0) {
+                    gsap.set(toAnimate, { y: cfg.offset, opacity: 0 });
+                    
+                    const tl = gsap.timeline();
+                    tl.to(toAnimate, {
+                        y: 0,
+                        opacity: 1,
+                        duration: cfg.duration,
+                        stagger: cfg.stagger,
+                        ease: cfg.ease
+                    });
+                    
+                    window._bootedProjects.shotDetail[sid] = true;
+                }
+            }
+        });
+    }
 }

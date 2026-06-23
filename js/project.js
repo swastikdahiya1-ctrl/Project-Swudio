@@ -314,43 +314,46 @@ function renderOverview(c, p) {
         });
     });
 
-    // Boot up animation sequence for the Overview tab
-    if (typeof gsap !== 'undefined') {
-        const cards = Array.from(c.querySelectorAll('.ov-card'));
-        const progContainer = c.querySelector('.ov-prog-container');
-        const progFill = c.querySelector('.ov-prog-fill');
-        
-        if (cards.length && progContainer && progFill) {
-            const targetWidth = progFill.style.width;
+    // Boot up animation sequence for the Overview
+    if (typeof gsap !== 'undefined' && !window._reduceMotion) {
+        import('./utils.js').then(({ getBootConfig }) => {
+            const cfg = getBootConfig('overview');
+            const cards = Array.from(c.querySelectorAll('.ov-card'));
+            const progContainer = c.querySelector('.ov-prog-container');
+            const progFill = c.querySelector('.ov-prog-fill');
             
-            window._bootedProjects = window._bootedProjects || {};
-            window._bootedProjects.overview = window._bootedProjects.overview || {};
-            
-            if (!window._bootedProjects.overview[p.id]) {
-                // Hide elements initially
-                gsap.set([...cards, progContainer], { y: 40, opacity: 0 });
-                gsap.set(progFill, { width: "0%" });
+            if (cards.length && progContainer && progFill) {
+                const targetWidth = progFill.style.width;
                 
-                // Animate sequence: Project Summary, Production, Shots, Ideas, Progress Block
-                const tl = gsap.timeline();
-                tl.to([...cards, progContainer], {
-                    y: 0,
-                    opacity: 1,
-                    duration: 0.6,
-                    stagger: 0.1,
-                    ease: "back.out(1.2)"
-                });
+                window._bootedProjects = window._bootedProjects || {};
+                window._bootedProjects.overview = window._bootedProjects.overview || {};
                 
-                // Then slide the progress bar fill
-                tl.to(progFill, {
-                    width: targetWidth,
-                    duration: 1.0,
-                    ease: "power3.out"
-                }, "-=0.3"); // Overlap with container slide-in
-                
-                window._bootedProjects.overview[p.id] = true;
+                if (!window._bootedProjects.overview[p.id]) {
+                    // Hide elements initially
+                    gsap.set([...cards, progContainer], { y: cfg.offset, opacity: 0 });
+                    gsap.set(progFill, { width: "0%" });
+                    
+                    // Animate sequence: Project Summary, Production, Shots, Ideas, Progress Block
+                    const tl = gsap.timeline();
+                    tl.to([...cards, progContainer], {
+                        y: 0,
+                        opacity: 1,
+                        duration: cfg.duration,
+                        stagger: cfg.stagger,
+                        ease: cfg.ease
+                    });
+                    
+                    // Then slide the progress bar fill
+                    tl.to(progFill, {
+                        width: targetWidth,
+                        duration: 1.0,
+                        ease: "power3.out"
+                    }, "-=" + (cfg.duration * 0.6)); // Overlap with container slide-in
+                    
+                    window._bootedProjects.overview[p.id] = true;
+                }
             }
-        }
+        });
     }
 }
 
@@ -402,33 +405,36 @@ export function renderScript(c, p) {
     refreshVS(p);
     renderVSIdeasDrawer(p);
 
-    if (typeof gsap !== 'undefined') {
-        window._bootedProjects = window._bootedProjects || {};
-        window._bootedProjects.vs = window._bootedProjects.vs || {};
-        
-        if (!window._bootedProjects.vs[p.id]) {
-            const blocks = Array.from(c.querySelectorAll('.vs-block-row'));
-            const addWrapper = c.querySelector('.vs-add-wrapper');
+    if (typeof gsap !== 'undefined' && !window._reduceMotion) {
+        import('./utils.js').then(({ getBootConfig }) => {
+            const cfg = getBootConfig('script');
+            window._bootedProjects = window._bootedProjects || {};
+            window._bootedProjects.vs = window._bootedProjects.vs || {};
             
-            const toAnimate = [];
-            if (blocks.length > 0) toAnimate.push(...blocks);
-            if (addWrapper) toAnimate.push(addWrapper);
+            if (!window._bootedProjects.vs[p.id]) {
+                const blocks = Array.from(c.querySelectorAll('.vs-block-row'));
+                const addWrapper = c.querySelector('.vs-add-wrapper');
+                
+                const toAnimate = [];
+                if (blocks.length > 0) toAnimate.push(...blocks);
+                if (addWrapper) toAnimate.push(addWrapper);
 
-            if (toAnimate.length > 0) {
-                gsap.set(toAnimate, { y: 40, opacity: 0 });
-                
-                const tl = gsap.timeline();
-                tl.to(toAnimate, {
-                    y: 0,
-                    opacity: 1,
-                    duration: 0.6,
-                    stagger: 0.1,
-                    ease: "back.out(1.2)"
-                });
-                
-                window._bootedProjects.vs[p.id] = true;
+                if (toAnimate.length > 0) {
+                    gsap.set(toAnimate, { y: cfg.offset, opacity: 0 });
+                    
+                    const tl = gsap.timeline();
+                    tl.to(toAnimate, {
+                        y: 0,
+                        opacity: 1,
+                        duration: cfg.duration,
+                        stagger: cfg.stagger,
+                        ease: cfg.ease
+                    });
+                    
+                    window._bootedProjects.vs[p.id] = true;
+                }
             }
-        }
+        });
     }
 }
 

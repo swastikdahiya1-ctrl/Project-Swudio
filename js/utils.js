@@ -81,3 +81,19 @@ export function openPromptModal(title, subtitle, label, initialValue, onConfirm)
         if (e.key === 'Enter') document.getElementById('prompt-confirm').click();
     });
 }
+
+export function getBootConfig(view) {
+    const defaultSettings = {
+        dashboard: { offset: 50, stagger: 0.1, duration: 0.5, ease: "back.out(1.2)" },
+        overview:  { offset: 20, stagger: 0.05, duration: 0.5, ease: "back.out(1.2)" },
+        script:    { offset: 20, stagger: 0.05, duration: 0.5, ease: "back.out(1.2)" },
+        board:     { offset: 20, stagger: 0.1, duration: 0.5, ease: "back.out(1.2)" },
+        shots:     { offset: 50, stagger: 0.15, duration: 0.5, ease: "back.out(1.2)" },
+    };
+    try {
+        const stored = JSON.parse(localStorage.getItem('studio_boot_settings') || '{}');
+        return { ...defaultSettings[view], ...(stored[view] || {}) };
+    } catch (e) {
+        return defaultSettings[view];
+    }
+}

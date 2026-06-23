@@ -1,10 +1,17 @@
 import { state } from './state.js';
 import { saveAll } from './db.js';
 
+// ─── PERMANENT HOSTING CREDENTIALS ───
+// Paste your Supabase project keys here to make the login screen load by default for everyone
+const DEFAULT_SUPABASE_URL = ""; 
+const DEFAULT_SUPABASE_ANON_KEY = "";
+
 let supabaseClient = null;
 
 export function isConfigured() {
-    return !!(localStorage.getItem('supabase_url') && localStorage.getItem('supabase_anon_key'));
+    const url = localStorage.getItem('supabase_url') || DEFAULT_SUPABASE_URL;
+    const key = localStorage.getItem('supabase_anon_key') || DEFAULT_SUPABASE_ANON_KEY;
+    return !!(url && key);
 }
 
 export function saveConfig(url, key) {
@@ -17,8 +24,8 @@ export function saveConfig(url, key) {
 export function initSupabase() {
     if (supabaseClient) return supabaseClient;
     
-    const url = localStorage.getItem('supabase_url');
-    const key = localStorage.getItem('supabase_anon_key');
+    const url = localStorage.getItem('supabase_url') || DEFAULT_SUPABASE_URL;
+    const key = localStorage.getItem('supabase_anon_key') || DEFAULT_SUPABASE_ANON_KEY;
     
     if (url && key && window.supabase) {
         try {

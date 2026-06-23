@@ -15,11 +15,31 @@ export function nav(view, projId = null, opts = {}) {
     // Default to projects tab in trash
     if (view === 'trash' && !state.S.trashTab) state.S.trashTab = 'projects';
 
+    // Auto-close mobile sidebar drawer on navigation
+    const appRoot = document.getElementById('app-root');
+    if (appRoot) appRoot.classList.remove('sidebar-open');
+
     render();
 }
 
 export function render() {
     renderSidebar();
+
+    // Update Mobile Top Bar Title
+    const titleEl = document.getElementById('mobile-view-title');
+    if (titleEl) {
+        if (state.S.view === 'dashboard') {
+            titleEl.innerText = "STUDIO PM // HOME";
+        } else if (state.S.view === 'all-ideas') {
+            titleEl.innerText = "STUDIO PM // IDEAS";
+        } else if (state.S.view === 'trash') {
+            titleEl.innerText = "STUDIO PM // ARCHIVE";
+        } else if (state.S.view === 'project') {
+            const p = state.projects.find(x => x.id === state.S.projectId);
+            titleEl.innerText = p ? p.title.toUpperCase() : "STUDIO PM // PROJECT";
+        }
+    }
+
     const m = document.getElementById('main');
     if (!m) return;
     
@@ -95,6 +115,24 @@ document.addEventListener('DOMContentLoaded', () => {
     window.addEventListener('keydown', e => {
         if (e.ctrlKey && e.key === 'p') { e.preventDefault(); openNewProjModal(); }
     });
+
+    // Mobile menu drawer toggle listeners
+    const menuBtn = document.getElementById('mobile-menu-btn');
+    const overlay = document.getElementById('sidebar-overlay');
+    const appRoot = document.getElementById('app-root');
+
+    if (menuBtn && appRoot) {
+        menuBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            appRoot.classList.toggle('sidebar-open');
+        });
+    }
+
+    if (overlay && appRoot) {
+        overlay.addEventListener('click', () => {
+            appRoot.classList.remove('sidebar-open');
+        });
+    }
 
     // Wait for BOTH the DB and fonts before booting.
     const dbPromise   = new Promise(resolve => initDB(resolve));

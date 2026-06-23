@@ -3582,3 +3582,40 @@ button,
   cursor: pointer;
   border-radius: 0;
 }
+
+/* ─── FOUC / BOOT ANIMATION PREVENTIONS ─── */
+body.is-booting .dashboard-revamp .project-card,
+body.is-booting .dashboard-revamp .new-card {
+  opacity: 0 !important;
+  transform: translateY(50px) !important;
+}
+
+body.is-booting .dashboard-revamp #btn-new-proj {
+  opacity: 0 !important;
+  transform: translateY(-20px) !important;
+}
+
+body.is-booting .dashboard-revamp .welcome h1,
+body.is-booting .dashboard-revamp .welcome p {
+  clip-path: polygon(0% -50%, 0% -50%, 0% 150%, 0% 150%) !important;
+}
+
+body.is-booting .dash-section-header {
+  opacity: 0 !important;
+  transform: translateY(10px) !important;
+}
+
+body.is-booting .idea-input-row,
+body.is-booting .dash-idea-row {
+  opacity: 0 !important;
+  transform: translateY(50px) !important;
+}
+
+body.is-booting .sidebar .sb-logo-wrap,
+body.is-booting .sidebar .sb-label,
+body.is-booting .sidebar .sb-item,
+body.is-booting .sidebar .sb-proj-header,
+body.is-booting .sidebar .sb-footer {
+  opacity: 0 !important;
+  transform: translateY(40px) !important;
+}

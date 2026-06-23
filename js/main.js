@@ -58,6 +58,10 @@ function bootApp() {
                     opacity: 0, duration: 0.6, ease: "power2.inOut",
                     onComplete: () => {
                         if (splash) splash.style.display = 'none';
+                        
+                        // Remove booting class so GSAP animation can play
+                        document.body.classList.remove('is-booting');
+
                         // 4. Play the GSAP reveal animation
                         if (window._pendingBootTL) {
                             window._pendingBootTL.play();
@@ -69,6 +73,7 @@ function bootApp() {
         });
     } else {
         // GSAP unavailable fallback
+        document.body.classList.remove('is-booting');
         if (appRoot) appRoot.style.opacity = '1';
         if (splash) {
             splash.style.transition = 'opacity 0.6s ease-in-out';

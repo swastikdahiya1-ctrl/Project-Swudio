@@ -39,52 +39,47 @@ function bootApp() {
     const splash = document.getElementById('splash-screen');
     const appRoot = document.getElementById('app-root');
     
+    // 1. Render the DOM immediately.
+    //    renderDashboard() builds the HTML, calls gsap.set() to hide elements,
+    //    and stores the paused boot timeline in window._pendingBootTL.
+    render();
+
     if (typeof gsap !== 'undefined') {
-        gsap.to(splash, {
-            opacity: 0, duration: 0.6, ease: "power2.inOut",
-            onComplete: () => {
-                if(splash) splash.style.display = 'none';
+        // 2. Double-RAF: give the browser one full paint cycle to commit the 
+        //    DOM and GSAP inline styles while STILL BEHIND the solid splash screen.
+        requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+                // Reveal the app container (its contents are currently opacity:0 from gsap.set)
+                if (appRoot) appRoot.style.opacity = '1';
 
-                // 1. Render while appRoot is still opacity:0.
-                //    renderDashboard() calls gsap.set() to hide all elements
-                //    and stores a PAUSED timeline in window._pendingBootTL.
-                render();
-
-                // 2. Double-RAF: give the browser one full paint cycle to
-                //    commit the gsap.set() hidden states BEFORE we reveal
-                //    the app root. Without this, the browser can paint
-                //    elements at their natural positions for 1-2 frames
-                //    (the visible "hitch") before GSAP hides them.
-                requestAnimationFrame(() => {
-                    requestAnimationFrame(() => {
-                        if(appRoot) appRoot.style.opacity = '1';
-                        // 3. NOW play the animation — elements go from their
-                        //    hidden initial state to their final positions.
+                // 3. NOW fade out the splash screen. 
+                //    Any FOUC or layout shifts happened invisibly behind it.
+                gsap.to(splash, {
+                    opacity: 0, duration: 0.6, ease: "power2.inOut",
+                    onComplete: () => {
+                        if (splash) splash.style.display = 'none';
+                        // 4. Play the GSAP reveal animation
                         if (window._pendingBootTL) {
                             window._pendingBootTL.play();
                             window._pendingBootTL = null;
                         }
-                    });
+                    }
                 });
-            }
+            });
         });
     } else {
         // GSAP unavailable fallback
+        if (appRoot) appRoot.style.opacity = '1';
         if (splash) {
             splash.style.transition = 'opacity 0.6s ease-in-out';
             splash.style.opacity = '0';
             const finishBoot = () => {
-                splash.style.display = 'none';
-                render();
-                if(appRoot) appRoot.style.opacity = '1';
+                if (splash) splash.style.display = 'none';
             };
             splash.addEventListener('transitionend', finishBoot, { once: true });
             setTimeout(() => {
-                if (splash.style.display !== 'none') finishBoot();
+                if (splash && splash.style.display !== 'none') finishBoot();
             }, 750);
-        } else {
-            render();
-            if(appRoot) appRoot.style.opacity = '1';
         }
     }
 }

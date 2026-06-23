@@ -701,6 +701,12 @@ export function renderAuthScreen() {
                     <div class="auth-toggle-link" id="auth-toggle-btn">
                         ${isSignUpMode ? 'ALREADY HAVE AN ACCOUNT? SIGN IN' : 'NEED AN ACCOUNT? SIGN UP'}
                     </div>
+
+                    <div style="display:flex; justify-content:center; margin-top:16px; width: 100%;">
+                        <button class="btn btn-ghost" id="auth-bypass-btn" style="font-size:9px; letter-spacing:1.5px; text-transform:uppercase; font-family:'IBM Plex Mono', monospace; width:100%; border:1px solid #222; padding:10px; cursor:pointer;">
+                            <i class="ti ti-plug-off" style="margin-right:6px;"></i> Continue offline (Local Mode)
+                        </button>
+                    </div>
                     
                     <div class="auth-status-msg" id="auth-status"></div>
                 </div>
@@ -714,6 +720,16 @@ export function renderAuthScreen() {
             renderForm();
         });
         document.getElementById('auth-cfg-btn').addEventListener('click', openDbConfigModal);
+        
+        const bypassBtn = document.getElementById('auth-bypass-btn');
+        if (bypassBtn) {
+            bypassBtn.addEventListener('click', () => {
+                sessionStorage.setItem('bypass_auth', 'true');
+                import('./main.js').then(m => {
+                    m.bootApp();
+                });
+            });
+        }
         
         const emailInp = document.getElementById('auth-email');
         const passInp = document.getElementById('auth-password');

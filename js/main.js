@@ -144,7 +144,9 @@ document.addEventListener('DOMContentLoaded', () => {
     Promise.all([dbPromise, fontPromise]).then(async () => {
         initSupabase();
 
-        if (isConfigured()) {
+        const bypassAuth = sessionStorage.getItem('bypass_auth') === 'true';
+
+        if (isConfigured() && !bypassAuth) {
             const user = await getCurrentUser();
             if (user) {
                 // Sync cloud data to local IndexedDB first on boot

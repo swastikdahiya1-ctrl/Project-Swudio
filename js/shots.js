@@ -316,6 +316,7 @@ function renderShotDetail(c, p, sid) {
     const hasNext = shotIndex < p.shots.length - 1;
 
     c.innerHTML = `
+    <div class="shot-aside-overlay" id="shot-aside-overlay"></div>
     <div class="page" style="padding:40px; max-width:1400px; margin:0 auto; padding-bottom:100px;">
       <div class="shot-top-nav">
         <div class="shot-top-left">
@@ -324,6 +325,7 @@ function renderShotDetail(c, p, sid) {
           <div class="shot-title-big">SHOT ${s.number}</div>
         </div>
         <div class="shot-top-right" style="display:flex; align-items:center;">
+          <button class="shot-badge-btn" id="sd-toggle-aside" style="border-radius:0; margin-right: 8px;" title="View Tasks"><i class="ti ti-list-check"></i></button>
           <div class="toggle-2d3d" style="display:flex; border:1px solid #333; margin-right: 16px;">
               <button id="btn-3d" style="background:${s.type==='3D'?'#222':'transparent'}; color:${s.type==='3D'?'#fff':'#888'}; border:none; padding:4px 12px; font-family:'IBM Plex Mono', monospace; font-size:12px; cursor:pointer;">3D</button>
               <button id="btn-2d" style="background:${s.type==='2D'?'#222':'transparent'}; color:${s.type==='2D'?'#fff':'#888'}; border:none; padding:4px 12px; font-family:'IBM Plex Mono', monospace; font-size:12px; cursor:pointer;">2D</button>
@@ -366,6 +368,9 @@ function renderShotDetail(c, p, sid) {
 
         <!-- Sidebar Column -->
         <div class="shot-side-col">
+          <div class="shot-aside-close-mobile" style="display:none; justify-content:flex-end; margin-bottom:16px; width:100%;">
+             <button class="icon-btn" id="shot-aside-close-btn" style="padding:6px; color:#ff4444; background:none; border:none; cursor:pointer;"><i class="ti ti-x" style="font-size:18px;"></i></button>
+          </div>
           <div style="background:transparent; border:1px solid #141414; padding:24px;">
             <div class="section-label-revamp" style="margin-bottom:16px;">SHOT PROGRESS</div>
             <div class="side-prog-large">${pc}%</div>
@@ -391,8 +396,34 @@ function renderShotDetail(c, p, sid) {
     </div>`;
 
     document.getElementById('sd-back').addEventListener('click', () => {
+        const appRoot = document.getElementById('app-root');
+        if (appRoot) appRoot.classList.remove('shot-aside-open');
         state.S.shotId = null; import('./main.js').then(m => m.render());
     });
+
+    const toggleAsideBtn = document.getElementById('sd-toggle-aside');
+    const asideCloseBtn = document.getElementById('shot-aside-close-btn');
+    const asideOverlay = document.getElementById('shot-aside-overlay');
+    const appRoot = document.getElementById('app-root');
+
+    if (toggleAsideBtn && appRoot) {
+        toggleAsideBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            appRoot.classList.toggle('shot-aside-open');
+        });
+    }
+
+    if (asideCloseBtn && appRoot) {
+        asideCloseBtn.addEventListener('click', () => {
+            appRoot.classList.remove('shot-aside-open');
+        });
+    }
+
+    if (asideOverlay && appRoot) {
+        asideOverlay.addEventListener('click', () => {
+            appRoot.classList.remove('shot-aside-open');
+        });
+    }
 
     document.getElementById('sd-edit-t').addEventListener('click', () => {
         openPromptModal("Edit Shot Title", "Update title", "Title", s.title, val => {
@@ -444,9 +475,13 @@ function renderShotDetail(c, p, sid) {
     });
 
     if(hasPrev) document.getElementById('prev-shot').addEventListener('click', () => {
+        const appRoot = document.getElementById('app-root');
+        if (appRoot) appRoot.classList.remove('shot-aside-open');
         state.S.shotId = p.shots[shotIndex - 1].id; import('./main.js').then(m => m.render());
     });
     if(hasNext) document.getElementById('next-shot').addEventListener('click', () => {
+        const appRoot = document.getElementById('app-root');
+        if (appRoot) appRoot.classList.remove('shot-aside-open');
         state.S.shotId = p.shots[shotIndex + 1].id; import('./main.js').then(m => m.render());
     });
 

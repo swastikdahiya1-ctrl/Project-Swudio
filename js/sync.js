@@ -72,9 +72,13 @@ export async function signIn(email, password) {
 }
 
 export async function signOut() {
+    sessionStorage.removeItem('bypass_auth');
     const supabase = getClient();
-    if (!supabase) return;
-    await supabase.auth.signOut();
+    if (supabase) {
+        try {
+            await supabase.auth.signOut();
+        } catch(e) {}
+    }
     // Clear local cache state to prevent data leakage between logins
     state.projects = [];
     state.ideas = [];

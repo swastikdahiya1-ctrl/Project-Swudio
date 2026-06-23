@@ -29,7 +29,14 @@ export function shotCounts(p) {
 }
 
 export function renderProject(m, p) {
-    const t = state.S.tab;
+    let t = state.S.tab;
+    
+    // Redirect Project Board to Overview tab on mobile screens
+    if (t === 'board' && window.innerWidth <= 768) {
+        state.S.tab = 'overview';
+        t = 'overview';
+    }
+
     const isOver = t === 'overview';
     const isScript = t === 'script';
     const isBoard = t === 'board';
@@ -367,6 +374,7 @@ export function renderScript(c, p) {
         <button class="btn btn-ghost" id="vs-toggle-panel" style="padding:10px 16px;"><i class="ti ti-layout-sidebar-right-expand"></i> TOGGLE IDEAS PANEL</button>
       </div>
       <div class="vs-layout-container">
+        <div class="vs-ideas-overlay" id="vs-ideas-overlay"></div>
         <div class="vs-blocks-wrap" id="vs-list"></div>
         <div id="vs-ideas-drawer" class="vs-ideas-drawer">
           <div id="vs-ideas-drawer-content"></div>
@@ -374,9 +382,21 @@ export function renderScript(c, p) {
       </div>
     </div>`;
 
+    const vsOverlay = document.getElementById('vs-ideas-overlay');
+    if (vsOverlay) {
+        vsOverlay.addEventListener('click', () => {
+            const drawer = document.getElementById('vs-ideas-drawer');
+            if (drawer) drawer.classList.add('hidden');
+            vsOverlay.classList.remove('active');
+        });
+    }
+
     document.getElementById('vs-toggle-panel').addEventListener('click', () => {
         const drawer = document.getElementById('vs-ideas-drawer');
         drawer.classList.toggle('hidden');
+        if (vsOverlay) {
+            vsOverlay.classList.toggle('active', !drawer.classList.contains('hidden'));
+        }
     });
 
     refreshVS(p);
@@ -420,6 +440,10 @@ function renderVSIdeasDrawer(p) {
     const gIdeas = state.ideas || [];
 
     d.innerHTML = `
+      <div class="vs-ideas-header-mobile" style="display:none; justify-content:space-between; align-items:center; margin-bottom:16px; border-bottom:1px solid #1e1e1e; padding-bottom:12px; width: 100%;">
+         <span style="font-family:'IBM Plex Mono', monospace; font-size:10px; color:#aaa; letter-spacing:1px;">IDEAS PANEL</span>
+         <button class="icon-btn" id="vs-ideas-close-btn" style="padding:6px; color:#ff4444; cursor:pointer; background:none; border:none;"><i class="ti ti-x" style="font-size:16px;"></i></button>
+      </div>
       <div class="ideas-section">
         <div class="ideas-sec-title">PROJECT IDEAS</div>
         <div class="ideas-sec-list">
@@ -449,6 +473,16 @@ function renderVSIdeasDrawer(p) {
         </div>
       </div>
     `;
+
+    const closeBtn = document.getElementById('vs-ideas-close-btn');
+    if (closeBtn) {
+        closeBtn.addEventListener('click', () => {
+            const drawer = document.getElementById('vs-ideas-drawer');
+            if (drawer) drawer.classList.add('hidden');
+            const vsOverlay = document.getElementById('vs-ideas-overlay');
+            if (vsOverlay) vsOverlay.classList.remove('active');
+        });
+    }
 
     d.querySelectorAll('.move-to-project').forEach(btn => {
         btn.addEventListener('click', () => {

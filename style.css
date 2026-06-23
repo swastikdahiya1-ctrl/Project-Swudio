@@ -3960,9 +3960,115 @@ body.is-booting .sidebar .sb-footer {
   .icon-btn, .btn, .sb-item, .sb-proj-header {
     min-height: 38px;
   }
+
+  /* Hide project board nav link on mobile */
+  .sb-item[data-tab="board"] {
+    display: none !important;
+  }
+
+  /* Shot detail mobile overrides */
+  #sd-toggle-aside {
+    display: inline-flex !important;
+  }
+
+  .shot-detail-layout {
+    display: block !important;
+  }
+
+  .shot-side-col {
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 300px;
+    background: #0B0B0B;
+    border-left: 1px solid #1E1E1E;
+    z-index: 20000;
+    padding: 24px;
+    overflow-y: auto;
+    transform: translateX(100%);
+    transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow: -10px 0 30px rgba(0,0,0,0.5);
+  }
+
+  .app.shot-aside-open .shot-side-col {
+    transform: translateX(0);
+  }
+
+  .shot-aside-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(2px);
+    z-index: 19999;
+  }
+
+  .app.shot-aside-open .shot-aside-overlay {
+    display: block;
+  }
+
+  /* Visual scripting drawer overlay on mobile */
+  .vs-layout-container {
+    position: relative !important;
+    gap: 0 !important;
+  }
+
+  .vs-blocks-wrap {
+    padding-right: 0 !important;
+  }
+
+  .vs-ideas-drawer {
+    position: absolute !important;
+    top: 0 !important;
+    right: 0 !important;
+    height: 100% !important;
+    width: 280px !important;
+    background: #0B0B0B !important;
+    z-index: 50 !important;
+    border-left: 1px solid #1e1e1e !important;
+    padding: 20px !important;
+    box-shadow: -5px 0 20px rgba(0,0,0,0.8) !important;
+    transform: translateX(0) !important;
+    opacity: 1 !important;
+    transition: transform 0.3s ease, opacity 0.3s ease !important;
+  }
+
+  .vs-ideas-drawer.hidden {
+    transform: translateX(100%) !important;
+    opacity: 0 !important;
+    width: 280px !important;
+    margin-left: 0 !important;
+    pointer-events: none !important;
+  }
+
+  .vs-ideas-overlay {
+    display: none;
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(2px);
+    z-index: 45;
+  }
+
+  .vs-ideas-overlay.active {
+    display: block;
+  }
+
+  .vs-ideas-header-mobile {
+    display: flex !important;
+  }
+
+  .shot-aside-close-mobile {
+    display: flex !important;
+  }
 }
 
 /* Ensure mobile header is hidden on desktop by default */
 .mobile-header {
+  display: none;
+}
+
+#sd-toggle-aside {
   display: none;
 }

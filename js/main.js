@@ -95,7 +95,17 @@ document.addEventListener('DOMContentLoaded', () => {
         if (e.ctrlKey && e.key === 'p') { e.preventDefault(); openNewProjModal(); }
     });
 
-    initDB(() => {
+    // Wait for BOTH the DB and fonts before booting.
+    // On Vercel (first load) Google font .woff2 files arrive from fonts.gstatic.com
+    // after JS is ready. Without this wait, fonts load mid-animation causing a
+    // text reflow (the "hitch"). The splash stays visible during the wait.
+    const dbPromise   = new Promise(resolve => initDB(resolve));
+    const fontPromise = Promise.race([
+        document.fonts.ready,
+        new Promise(resolve => setTimeout(resolve, 2000)) // 2s safety cap
+    ]);
+
+    Promise.all([dbPromise, fontPromise]).then(() => {
         bootApp();
     });
 });

@@ -40,16 +40,36 @@ function bootApp() {
     const appRoot = document.getElementById('app-root');
     
     if (typeof gsap !== 'undefined') {
-        const tl = gsap.timeline();
-        tl.to(splash, {
+        gsap.to(splash, {
             opacity: 0, duration: 0.6, ease: "power2.inOut",
             onComplete: () => {
                 if(splash) splash.style.display = 'none';
+
+                // 1. Render while appRoot is still opacity:0.
+                //    renderDashboard() calls gsap.set() to hide all elements
+                //    and stores a PAUSED timeline in window._pendingBootTL.
                 render();
-                if(appRoot) appRoot.style.opacity = '1';
+
+                // 2. Double-RAF: give the browser one full paint cycle to
+                //    commit the gsap.set() hidden states BEFORE we reveal
+                //    the app root. Without this, the browser can paint
+                //    elements at their natural positions for 1-2 frames
+                //    (the visible "hitch") before GSAP hides them.
+                requestAnimationFrame(() => {
+                    requestAnimationFrame(() => {
+                        if(appRoot) appRoot.style.opacity = '1';
+                        // 3. NOW play the animation — elements go from their
+                        //    hidden initial state to their final positions.
+                        if (window._pendingBootTL) {
+                            window._pendingBootTL.play();
+                            window._pendingBootTL = null;
+                        }
+                    });
+                });
             }
         });
     } else {
+        // GSAP unavailable fallback
         if (splash) {
             splash.style.transition = 'opacity 0.6s ease-in-out';
             splash.style.opacity = '0';
@@ -59,11 +79,8 @@ function bootApp() {
                 if(appRoot) appRoot.style.opacity = '1';
             };
             splash.addEventListener('transitionend', finishBoot, { once: true });
-            // Fallback timeout in case transitionend does not fire
             setTimeout(() => {
-                if (splash.style.display !== 'none') {
-                    finishBoot();
-                }
+                if (splash.style.display !== 'none') finishBoot();
             }, 750);
         } else {
             render();

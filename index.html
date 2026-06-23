@@ -24,12 +24,11 @@
   
   <div id="modal-root"></div>
 
+  <!-- GSAP must be defer (not async) and listed BEFORE the module so it is
+       guaranteed to execute before main.js boots the app -->
+  <script src="lib/gsap.min.js" defer></script>
+  <script src="lib/Draggable.min.js" defer></script>
+  <script src="lib/confetti.browser.min.js" defer></script>
   <script type="module" src="js/main.js"></script>
-  
-  <!-- App loads first, animations and confetti load after without blocking -->
-  <script src="lib/gsap.min.js" async></script>
-  <script src="lib/Draggable.min.js" async></script>
-  <script src="lib/confetti.browser.min.js" async></script>
-  
 </body>
 </html>

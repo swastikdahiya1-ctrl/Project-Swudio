@@ -233,7 +233,8 @@ export function renderDashboard(m) {
         const ideas = m.querySelectorAll('.idea-input-row, .dash-idea-row');
         const sidebarItems = document.querySelectorAll('.sidebar .sb-logo-wrap, .sidebar .sb-label, .sidebar .sb-item, .sidebar .sb-proj-header, .sidebar .sb-footer');
 
-        const tl = gsap.timeline();
+        // Hide all elements FIRST (synchronous, immediate) —
+        // these styles are committed before the app root is revealed
         gsap.set(cards, { opacity: 0, y: 50 });
         gsap.set(topbarBtn, { opacity: 0, y: -20 });
         gsap.set([dashTitle, dashSub], { clipPath: "polygon(0% -50%, 0% -50%, 0% 150%, 0% 150%)" });
@@ -241,6 +242,9 @@ export function renderDashboard(m) {
         gsap.set(ideas, { opacity: 0, y: 50 });
         gsap.set(sidebarItems, { opacity: 0, y: 40 });
 
+        // Build the timeline PAUSED — bootApp will play() it after the first
+        // browser paint with the hidden elements, eliminating any flash
+        const tl = gsap.timeline({ paused: true });
         tl.to(cards, { y: 0, opacity: 1, duration: 0.5, stagger: 0.2, ease: "back.out(1.2)" }, 0);
         tl.to(dashTitle, { clipPath: "polygon(0% -50%, 110% -50%, 110% 150%, 0% 150%)", duration: 0.8, ease: "back.out(1.2)" }, 0.1)
             .to(dashSub, { clipPath: "polygon(0% -50%, 110% -50%, 110% 150%, 0% 150%)", duration: 0.8, ease: "back.out(1.2)" }, 0.2);
@@ -249,6 +253,7 @@ export function renderDashboard(m) {
         tl.to(headers, { y: 0, opacity: 1, duration: 0.5, stagger: 0.1, ease: "back.out(1.2)" }, 0.5)
             .to(ideas, { y: 0, opacity: 1, duration: 0.5, stagger: 0.05, ease: "back.out(1.2)" }, 0.2);
 
+        window._pendingBootTL = tl;
         window._appHasBooted = true;
     }
 }

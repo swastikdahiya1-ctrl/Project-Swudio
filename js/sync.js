@@ -3,8 +3,8 @@ import { saveAll } from './db.js';
 
 // ─── PERMANENT HOSTING CREDENTIALS ───
 // Paste your Supabase project keys here to make the login screen load by default for everyone
-const DEFAULT_SUPABASE_URL = ""; 
-const DEFAULT_SUPABASE_ANON_KEY = "";
+const DEFAULT_SUPABASE_URL = "https://gqmqfennyioguszfgkte.supabase.co"; 
+const DEFAULT_SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdxbXFmZW5ueWlvZ3VzemZna3RlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIyMjk5MzgsImV4cCI6MjA5NzgwNTkzOH0.q1WmS9rMSLT758eMlfBeoUL9n4rVqI7LL_IgIe7iOg4";
 
 let supabaseClient = null;
 

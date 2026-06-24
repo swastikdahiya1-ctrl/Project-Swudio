@@ -3897,7 +3897,7 @@ body.is-booting .sidebar .sb-footer {
   }
 
   .dashboard-revamp .projects-grid {
-    grid-template-columns: 1fr !important;
+    grid-template-columns: 1fr 1fr !important;
     gap: 16px !important;
   }
 
@@ -4009,14 +4009,14 @@ body.is-booting .sidebar .sb-footer {
     display: block;
   }
 
-  /* Visual scripting drawer overlay on mobile */
   .vs-layout-container {
     position: relative !important;
     gap: 0 !important;
   }
 
   .vs-blocks-wrap {
-    padding-right: 0 !important;
+    padding: 16px !important;
+    overflow-y: visible !important;
   }
 
   .vs-ideas-drawer {
@@ -4085,6 +4085,41 @@ body.is-booting .sidebar .sb-footer {
     text-align: center;
     font-size: 11px;
     font-family: 'IBM Plex Mono', monospace;
+  }
+
+  /* All Ideas formatting fix */
+  .ai-row {
+    flex-wrap: wrap !important;
+    gap: 8px !important;
+  }
+  .ai-title, .ai-title-input {
+    flex-basis: 100% !important;
+    margin-bottom: 4px;
+    font-size: 14px !important;
+  }
+  .ai-actions {
+    opacity: 1 !important;
+    width: 100% !important;
+    justify-content: flex-end;
+    margin-top: 8px;
+  }
+  .ai-date {
+    width: auto !important;
+    margin-right: auto !important;
+  }
+
+  /* Shots layout fix */
+  .shots-grid-revamp {
+    grid-template-columns: 1fr 1fr !important;
+  }
+
+  /* Shot Detail inner page fix */
+  .storyboard-grid-revamp {
+    flex-wrap: wrap !important;
+    overflow-x: hidden !important;
+  }
+  .shot-main-col > div[style*="grid-template-columns:1fr 1fr"] {
+    grid-template-columns: 1fr !important;
   }
 }
 

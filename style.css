@@ -3958,7 +3958,7 @@ body.is-booting .sidebar .sb-footer {
 
   /* Ensure touch sizes are accessible */
   .icon-btn, .btn, .sb-item, .sb-proj-header {
-    min-height: 38px;
+    min-height: 44px;
   }
 
   /* Hide project board nav link on mobile */
@@ -3980,11 +3980,12 @@ body.is-booting .sidebar .sb-footer {
     top: 0;
     right: 0;
     bottom: 0;
-    width: 300px;
+    width: 85%;
+    max-width: 320px;
     background: #0B0B0B;
     border-left: 1px solid #1E1E1E;
     z-index: 20000;
-    padding: 24px;
+    padding: 16px;
     overflow-y: auto;
     transform: translateX(100%);
     transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
@@ -4023,11 +4024,12 @@ body.is-booting .sidebar .sb-footer {
     top: 0 !important;
     right: 0 !important;
     height: 100% !important;
-    width: 280px !important;
+    width: 85% !important;
+    max-width: 320px !important;
     background: #0B0B0B !important;
     z-index: 50 !important;
     border-left: 1px solid #1e1e1e !important;
-    padding: 20px !important;
+    padding: 16px !important;
     box-shadow: -5px 0 20px rgba(0,0,0,0.8) !important;
     transform: translateX(0) !important;
     opacity: 1 !important;
@@ -4037,7 +4039,8 @@ body.is-booting .sidebar .sb-footer {
   .vs-ideas-drawer.hidden {
     transform: translateX(100%) !important;
     opacity: 0 !important;
-    width: 280px !important;
+    width: 85% !important;
+    max-width: 320px !important;
     margin-left: 0 !important;
     pointer-events: none !important;
   }
@@ -4061,6 +4064,27 @@ body.is-booting .sidebar .sb-footer {
 
   .shot-aside-close-mobile {
     display: flex !important;
+  }
+
+  /* Modals adjustments */
+  .modal, .auth-modal, .auth-card {
+    padding: 16px !important;
+    width: 100% !important;
+    max-width: calc(100vw - 32px) !important;
+  }
+
+  .board-canvas, .canvas-toolbar {
+    display: none !important;
+  }
+
+  .board-revamp::after {
+    content: "Project Board is hidden on mobile screens. Switch to desktop.";
+    display: block;
+    padding: 40px 20px;
+    color: #888;
+    text-align: center;
+    font-size: 11px;
+    font-family: 'IBM Plex Mono', monospace;
   }
 }
 

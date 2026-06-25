@@ -379,7 +379,7 @@ export function renderScript(c, p) {
       <div class="vs-layout-container">
         <div class="vs-ideas-overlay" id="vs-ideas-overlay"></div>
         <div class="vs-blocks-wrap" id="vs-list"></div>
-        <div id="vs-ideas-drawer" class="vs-ideas-drawer">
+        <div id="vs-ideas-drawer" class="vs-ideas-drawer ${window.innerWidth <= 768 ? 'hidden' : ''}">
           <div id="vs-ideas-drawer-content"></div>
         </div>
       </div>

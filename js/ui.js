@@ -37,7 +37,7 @@ export function renderSidebar() {
         if (isExpanded) {
             projHTML += `<div class="sb-proj-nav" style="position:relative;">
          ${isCurrent ? '<div class="nav-indicator"></div>' : ''}
-         ${[['overview', 'ti-home', 'OVERVIEW'], ['script', 'ti-writing', 'VISUAL SCRIPT'], ['board', 'ti-layout-board', 'PROJECT BOARD'], ['shots', 'ti-camera', 'SHOTS']].map(([t, ic, lb]) => `<div class="sb-item sb-proj-nav-item ${state.S.tab === t.toLowerCase() && isCurrent ? 'active' : ''}" data-pid="${p.id}" data-tab="${t.toLowerCase()}"><i class="ti ${ic}"></i><span>${lb}</span></div>`).join('')}
+         ${[['overview', 'ti-home', 'OVERVIEW'], ['tasks', 'ti-check', 'TASKS'], ['script', 'ti-writing', 'VISUAL SCRIPT'], ['board', 'ti-layout-board', 'PROJECT BOARD'], ['shots', 'ti-camera', 'SHOTS']].map(([t, ic, lb]) => `<div class="sb-item sb-proj-nav-item ${state.S.tab === t.toLowerCase() && isCurrent ? 'active' : ''}" data-pid="${p.id}" data-tab="${t.toLowerCase()}"><i class="ti ${ic}"></i><span>${lb}</span></div>`).join('')}
        </div>`;
         }
     });
@@ -108,6 +108,8 @@ export function renderSidebar() {
         } else if (view === 'project' && window._bootedProjects) {
             if (tab === 'overview' && window._bootedProjects.overview) {
                 window._bootedProjects.overview[pId] = false;
+            } else if (tab === 'tasks' && window._bootedProjects.tasks) {
+                window._bootedProjects.tasks[pId] = false;
             } else if (tab === 'script' && window._bootedProjects.vs) {
                 window._bootedProjects.vs[pId] = false;
             } else if (tab === 'board' && window._bootedProjects.board) {

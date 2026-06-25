@@ -4255,3 +4255,168 @@ input[type="range"]::-moz-range-thumb {
   border: 2px solid #000;
   box-shadow: 0 0 0 1px #333;
 }
+
+/* ─── TASKS FEATURE ─── */
+.task-tab-btn {
+  background: transparent;
+  border: none;
+  color: #555;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  cursor: pointer;
+  padding: 0 0 8px 0;
+  border-bottom: 2px solid transparent;
+  text-transform: uppercase;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.task-tab-btn:hover {
+  color: #aaa;
+}
+
+.task-tab-btn.active {
+  color: #DDDDDE;
+  border-bottom: 2px solid #DDDDDE;
+}
+
+.task-tab-btn .count {
+  color: #555;
+  font-size: 9px;
+}
+
+.tasks-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.task-block {
+  background: #0d0d0d;
+  border: 1px solid #161616;
+  border-radius: 6px;
+  padding: 16px;
+  transition: all 0.3s var(--bezier-spring);
+}
+
+.task-block:hover {
+  border-color: #222;
+}
+
+.task-block.completed {
+  background: rgba(40, 197, 76, 0.03); /* Subtle green hue */
+  border-color: rgba(40, 197, 76, 0.1);
+}
+
+.task-block.dragging {
+  opacity: 0.8;
+  transform: scale(1.02);
+  box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+  z-index: 100;
+}
+
+.task-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.task-circle {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 1px solid #444;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: transparent;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.task-circle.sm {
+  width: 14px;
+  height: 14px;
+}
+
+.task-circle.derived {
+  cursor: default;
+}
+
+.task-circle:not(.derived):hover {
+  border-color: #888;
+}
+
+.task-circle.checked {
+  background: var(--accent-green);
+  border-color: var(--accent-green);
+  color: #000;
+}
+
+.task-title-input {
+  background: transparent;
+  border: none;
+  color: #DDDDDE;
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  outline: none;
+  width: 100%;
+}
+
+.task-title-input.done-text, .checklist-input.done-text {
+  text-decoration: line-through;
+  color: #555;
+}
+
+.task-date-input {
+  background: transparent;
+  border: none;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  outline: none;
+  cursor: pointer;
+  text-align: right;
+  width: 110px;
+}
+
+.task-date-input::-webkit-calendar-picker-indicator {
+    filter: invert(1);
+    opacity: 0.5;
+    cursor: pointer;
+}
+
+.task-date-input.normal { color: #DDDDDE; }
+.task-date-input.approaching { color: #f55; }
+.task-date-input.done { color: var(--accent-green); }
+
+.task-checklists {
+  margin-top: 16px;
+  margin-left: 30px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.task-checklist-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.checklist-input {
+  background: transparent;
+  border: none;
+  color: #aaa;
+  font-family: 'Inter', sans-serif;
+  font-size: 12px;
+  outline: none;
+  flex: 1;
+}
+
+.task-checklist-add {
+  margin-top: 4px;
+}

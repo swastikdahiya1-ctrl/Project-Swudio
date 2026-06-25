@@ -77,6 +77,7 @@ function sanitizeRecords() {
     state.projects.forEach(p => {
         if (p.pinned === undefined) p.pinned = false;
         if (!p.shots) p.shots = [];
+        if (!p.tasks) p.tasks = [];
         if (typeof p.visualScript === 'string') {
             p.visualScriptBlocks = p.visualScript.trim() ? [{ id: uid(), text: p.visualScript, shotId: null }] : [];
             delete p.visualScript;

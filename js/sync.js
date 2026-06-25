@@ -140,6 +140,7 @@ async function pushProject(p, userId) {
         visualScriptBlocks: p.visualScriptBlocks || [],
         shots: p.shots || [],
         ideas: p.ideas || [],
+        tasks: p.tasks || [],
         lastEdited: p.lastEdited || new Date().toISOString()
     });
     if (error) console.error(`Error syncing project ${p.id}:`, error);

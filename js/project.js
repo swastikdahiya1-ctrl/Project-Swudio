@@ -3,6 +3,7 @@ import { uid, formatDateTime, openPromptModal, openModal, closeModal, openConfir
 import { saveAll } from './db.js';
 import { renderShots } from './shots.js';
 import { renderBoard } from './board.js';
+import { renderProjectTasks } from './tasks.js';
 
 export function projProg(p) {
     if (!p.shots || p.shots.length === 0) return 0;
@@ -38,6 +39,7 @@ export function renderProject(m, p) {
     }
 
     const isOver = t === 'overview';
+    const isTasks = t === 'tasks';
     const isScript = t === 'script';
     const isBoard = t === 'board';
     const isShots = t === 'shots';
@@ -45,6 +47,7 @@ export function renderProject(m, p) {
     m.innerHTML = `<div id="proj-content" style="height: 100%; width: 100%; position: relative;"></div>`;
     const c = document.getElementById('proj-content');
     if (isOver) renderOverview(c, p);
+    else if (isTasks) renderProjectTasks(c, p);
     else if (isScript) renderScript(c, p);
     else if (isBoard) renderBoard(c, p);
     else if (isShots) renderShots(c, p);

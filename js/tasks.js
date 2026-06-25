@@ -79,7 +79,8 @@ export function renderProjectTasks(m, p) {
         p.tasks.push(newTask);
         saveAll();
         renderProjectTasks(m, p);
-    });
+        });
+    }
 
     renderTasksList(m, p);
 }

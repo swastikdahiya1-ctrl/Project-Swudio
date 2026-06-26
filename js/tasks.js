@@ -18,27 +18,29 @@ export function renderProjectTasks(m, p) {
 
     m.innerHTML = `
     <div class="page" style="padding: 40px; max-width: 900px; padding-bottom:100px;">
-        <div style="margin-bottom: 32px; display:flex; justify-content:space-between; align-items:flex-end;">
+        <div class="tasks-header-top" style="margin-bottom: 32px; display:flex; justify-content:space-between; align-items:flex-end; flex-wrap: wrap; gap: 16px;">
             <div>
                 <div style="font-size: 16px; font-weight: 600; color: #DDDDDE; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 8px;">PROJECT TASKS</div>
                 <div style="font-size: 10px; color: #555; text-transform: uppercase; letter-spacing: 1px;">STAY ON TOP OF WHAT NEEDS TO GET DONE.</div>
             </div>
-            <button class="btn btn-ghost" id="new-task-btn" style="font-size:10px; padding:6px 12px;"><i class="ti ti-plus"></i> NEW TASK</button>
+            <div class="tasks-header-actions" style="display:flex; align-items:center; gap: 16px; flex-wrap: wrap;">
+                <div class="tasks-sort" style="display:flex; align-items:center; gap:8px;">
+                    <span style="font-size:10px; color:#555; text-transform:uppercase;">SORT BY:</span>
+                    <select id="tasks-sort-sel" style="background:transparent; border:none; color:#DDDDDE; font-family:'IBM Plex Mono', monospace; font-size:10px; outline:none; cursor:pointer;">
+                        <option value="due_date" ${p.tasksSort === 'due_date' ? 'selected' : ''}>DUE DATE</option>
+                        <option value="manual" ${p.tasksSort === 'manual' ? 'selected' : ''}>MANUAL</option>
+                    </select>
+                </div>
+                <button class="btn btn-ghost" id="new-task-btn" style="font-size:10px; padding:6px 12px;"><i class="ti ti-plus"></i> NEW TASK</button>
+            </div>
         </div>
         
-        <div class="tasks-bar" style="display:flex; justify-content:space-between; border-bottom:1px solid #161616; padding-bottom:12px; margin-bottom:24px;">
-            <div class="tasks-tabs" style="display:flex; gap:24px;">
+        <div class="tasks-bar" style="display:flex; border-bottom:1px solid #161616; padding-bottom:12px; margin-bottom:24px; overflow-x: auto;">
+            <div class="tasks-tabs" style="display:flex; gap:24px; flex-wrap: wrap;">
                 <button class="task-tab-btn ${p.tasksFilter === 'all' ? 'active' : ''}" data-filter="all">ALL <span class="count">${p.tasks.length}</span></button>
-                <button class="task-tab-btn ${p.tasksFilter === 'pending' ? 'active' : ''}" data-filter="pending">PENDING <span class="count">${p.tasks.filter(t => !t.completed).length}</span></button>
+                <button class="task-tab-btn ${p.tasksFilter === 'pending' ? 'active' : ''}" data-filter="pending">PENDING <span class="count">${p.tasks.filter(t => !t.completed && (!t.checklists || !t.checklists.some(c => c.done))).length}</span></button>
                 <button class="task-tab-btn ${p.tasksFilter === 'inprogress' ? 'active' : ''}" data-filter="inprogress">IN PROGRESS <span class="count">${p.tasks.filter(t => t.checklists && t.checklists.some(c => c.done) && !t.completed).length}</span></button>
                 <button class="task-tab-btn ${p.tasksFilter === 'completed' ? 'active' : ''}" data-filter="completed">COMPLETED <span class="count">${p.tasks.filter(t => t.completed).length}</span></button>
-            </div>
-            <div class="tasks-sort" style="display:flex; align-items:center; gap:8px;">
-                <span style="font-size:10px; color:#555; text-transform:uppercase;">SORT BY:</span>
-                <select id="tasks-sort-sel" style="background:transparent; border:none; color:#DDDDDE; font-family:'IBM Plex Mono', monospace; font-size:10px; outline:none; cursor:pointer;">
-                    <option value="due_date" ${p.tasksSort === 'due_date' ? 'selected' : ''}>DUE DATE</option>
-                    <option value="manual" ${p.tasksSort === 'manual' ? 'selected' : ''}>MANUAL</option>
-                </select>
             </div>
         </div>
 
@@ -95,7 +97,9 @@ function renderTasksList(m, p) {
 
     let filtered = p.tasks.filter(t => {
         if (p.tasksFilter === 'all') return true;
-        if (p.tasksFilter === 'pending') return !t.completed;
+        if (p.tasksFilter === 'pending') {
+            return !t.completed && (!t.checklists || !t.checklists.some(c => c.done));
+        }
         if (p.tasksFilter === 'completed') return t.completed;
         if (p.tasksFilter === 'inprogress') {
             return !t.completed && t.checklists && t.checklists.some(c => c.done);

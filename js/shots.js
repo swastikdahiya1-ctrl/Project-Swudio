@@ -551,8 +551,12 @@ function renderShotDetail(c, p, sid) {
     `).join('');
 
         tc.querySelectorAll('.task-check').forEach(chk => chk.addEventListener('click', () => {
-            s.tasks[chk.dataset.idx].done = !s.tasks[chk.dataset.idx].done;
+            const wasDone = s.tasks[chk.dataset.idx].done;
+            s.tasks[chk.dataset.idx].done = !wasDone;
             getShotStatus(s);
+            if (!wasDone && s.tasks.every(t => t.done) && typeof window.confetti !== 'undefined') {
+                window.confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 }, zIndex: 99999 });
+            }
             p.lastEdited = new Date().toISOString(); saveAll(); renderShotDetail(c, p, sid); import('./ui.js').then(ui => ui.renderSidebar());
         }));
         tc.querySelectorAll('.task-del').forEach(btn => btn.addEventListener('click', () => {

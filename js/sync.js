@@ -178,10 +178,20 @@ export function triggerCloudSync() {
     
     if (syncTimeout) clearTimeout(syncTimeout);
     syncTimeout = setTimeout(async () => {
-        const user = await getCurrentUser();
-        if (!user) return;
-        
-        console.log("Triggering background cloud sync...");
+        forceCloudSync();
+    }, window._autoSaveDelay || 2000);
+}
+
+export async function forceCloudSync() {
+    const supabase = getClient();
+    if (!supabase) return false;
+    
+    if (syncTimeout) clearTimeout(syncTimeout);
+    const user = await getCurrentUser();
+    if (!user) return false;
+    
+    console.log("Forcing background cloud sync...");
+    try {
         // Sync all local records to Supabase
         for (const p of state.projects) {
             await pushProject(p, user.id);
@@ -192,8 +202,12 @@ export function triggerCloudSync() {
         for (const a of state.archives) {
             await pushArchive(a, user.id);
         }
-        console.log("Background cloud sync complete.");
-    }, window._autoSaveDelay || 2000);
+        console.log("Forced cloud sync complete.");
+        return true;
+    } catch(e) {
+        console.error("Force sync failed:", e);
+        return false;
+    }
 }
 
 export async function syncDown() {

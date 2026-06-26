@@ -4,7 +4,7 @@ import { saveAll } from './db.js';
 import { openConfirmModal, openPromptModal, closeModal, openModal } from './utils.js';
 import { nav, render, bootApp } from './main.js';
 import { projProg, shotCounts } from './project.js';
-import { signIn, signUp, signOut, saveConfig, isConfigured, syncDown, deleteProjectFromCloud, deleteIdeaFromCloud, deleteArchiveFromCloud } from './sync.js';
+import { signIn, signUp, signOut, saveConfig, isConfigured, syncDown, deleteProjectFromCloud, deleteIdeaFromCloud, deleteArchiveFromCloud, forceCloudSync } from './sync.js';
 
 export function renderSidebar() {
     const sb = document.getElementById('sidebar');
@@ -71,6 +71,9 @@ export function renderSidebar() {
           <div style="display:flex; gap:8px;">
              <button class="icon-btn" id="sb-settings-btn" style="font-size:9px; color:#555; gap:4px; text-transform:uppercase; font-family:'IBM Plex Mono', monospace;" title="Settings"><i class="ti ti-settings" style="font-size:12px;"></i> SETTINGS</button>
              <button class="icon-btn" id="sb-replay-boot-btn" style="font-size:9px; color:#555; gap:4px; text-transform:uppercase; font-family:'IBM Plex Mono', monospace;" title="Replay Animation"><i class="ti ti-player-play" style="font-size:12px;"></i> REPLAY</button>
+          </div>
+          <div style="display:flex; gap:8px; margin-top:4px;">
+             <button class="icon-btn" id="sb-force-save-btn" style="font-size:9px; color:#5aa; gap:4px; text-transform:uppercase; font-family:'IBM Plex Mono', monospace;" title="Force Cloud Save"><i class="ti ti-cloud-upload" style="font-size:12px;"></i> SAVE TO CLOUD</button>
           </div>
        </div>
        <div id="sb-clock" style="color:#333;">${formatDateTime(new Date().toISOString())}</div>
@@ -178,6 +181,34 @@ export function renderSidebar() {
             nav('project', el.dataset.pid, { tab: el.dataset.tab });
         });
     });
+
+    const forceSaveBtn = sb.querySelector('#sb-force-save-btn');
+    if (forceSaveBtn) {
+        forceSaveBtn.addEventListener('click', async () => {
+            forceSaveBtn.innerHTML = '<i class="ti ti-loader" style="font-size:12px; animation:spin 1s linear infinite;"></i> SAVING...';
+            forceSaveBtn.style.color = '#aa1';
+            
+            // Just in case saveAll didn't run recently
+            saveAll();
+            
+            const success = await forceCloudSync();
+            if (success) {
+                forceSaveBtn.innerHTML = '<i class="ti ti-check" style="font-size:12px;"></i> SAVED';
+                forceSaveBtn.style.color = '#1a1';
+                setTimeout(() => {
+                    forceSaveBtn.innerHTML = '<i class="ti ti-cloud-upload" style="font-size:12px;"></i> SAVE TO CLOUD';
+                    forceSaveBtn.style.color = '#5aa';
+                }, 2000);
+            } else {
+                forceSaveBtn.innerHTML = '<i class="ti ti-alert-triangle" style="font-size:12px;"></i> FAILED / OFFLINE';
+                forceSaveBtn.style.color = '#c53d3d';
+                setTimeout(() => {
+                    forceSaveBtn.innerHTML = '<i class="ti ti-cloud-upload" style="font-size:12px;"></i> SAVE TO CLOUD';
+                    forceSaveBtn.style.color = '#5aa';
+                }, 3000);
+            }
+        });
+    }
 
     sb.querySelectorAll('.pin-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {

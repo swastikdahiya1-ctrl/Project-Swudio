@@ -4434,3 +4434,4 @@ input[type="range"]::-moz-range-thumb {
 .task-checklist-add {
   margin-top: 4px;
 }
+@keyframes spin { 100% { transform: rotate(360deg); } }

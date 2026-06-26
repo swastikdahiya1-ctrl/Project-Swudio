@@ -139,7 +139,7 @@ function renderTasksList(m, p) {
             checklistHTML += `
                 <div class="task-checklist-item" data-cidx="${cIdx}">
                     <div class="task-circle sm ${c.done ? 'checked' : ''}"><i class="ti ti-check"></i></div>
-                    <input type="text" class="checklist-input ${c.done ? 'done-text' : ''}" value="${c.text || ''}" placeholder="Checklist item..."/>
+                    <textarea rows="1" class="checklist-input ${c.done ? 'done-text' : ''}" placeholder="Checklist item..." style="resize:none; overflow:hidden;">${c.text || ''}</textarea>
                     <button class="icon-btn del-check-btn"><i class="ti ti-trash"></i></button>
                 </div>
             `;
@@ -149,7 +149,7 @@ function renderTasksList(m, p) {
         taskEl.innerHTML = `
             <div class="task-header">
                 <div class="task-circle derived ${task.completed ? 'checked' : ''}"><i class="ti ti-check"></i></div>
-                <input type="text" class="task-title-input ${task.completed ? 'done-text' : ''}" value="${task.title || ''}" placeholder="New Task"/>
+                <textarea rows="1" class="task-title-input ${task.completed ? 'done-text' : ''}" placeholder="New Task" style="resize:none; overflow:hidden;">${task.title || ''}</textarea>
                 <div style="flex:1;"></div>
                 <div style="display:flex; flex-direction:column; align-items:flex-end; gap:4px; margin-right:16px;">
                     <div style="font-size:8px; color:#555; text-transform:uppercase; letter-spacing:1px;">DUE DATE</div>
@@ -174,6 +174,15 @@ function renderTasksList(m, p) {
             task.title = e.target.value;
             saveAll();
         });
+        titleInp.addEventListener('input', function() {
+            this.style.height = 'auto';
+            this.style.height = this.scrollHeight + 'px';
+        });
+        // Init height
+        setTimeout(() => {
+            titleInp.style.height = 'auto';
+            titleInp.style.height = titleInp.scrollHeight + 'px';
+        }, 0);
 
         const dateInp = taskEl.querySelector('.task-date-input');
         dateInp.addEventListener('change', (e) => {
@@ -206,10 +215,20 @@ function renderTasksList(m, p) {
                 saveAll();
                 renderProjectTasks(m, p);
             });
-            cEl.querySelector('.checklist-input').addEventListener('change', (e) => {
+            const chkInp = cEl.querySelector('.checklist-input');
+            chkInp.addEventListener('change', (e) => {
                 task.checklists[idx].text = e.target.value;
                 saveAll();
             });
+            chkInp.addEventListener('input', function() {
+                this.style.height = 'auto';
+                this.style.height = this.scrollHeight + 'px';
+            });
+            // Init height
+            setTimeout(() => {
+                chkInp.style.height = 'auto';
+                chkInp.style.height = chkInp.scrollHeight + 'px';
+            }, 0);
             cEl.querySelector('.del-check-btn').addEventListener('click', () => {
                 task.checklists.splice(idx, 1);
                 saveAll();

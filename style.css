@@ -692,8 +692,7 @@ body {
 
 .dashboard-revamp .project-thumb {
   width: 100%;
-  aspect-ratio: 16 / 9;
-  height: auto;
+  height: 130px;
   background: var(--bg-panel);
   overflow: hidden;
   display: flex;
@@ -719,8 +718,8 @@ body {
   background: transparent;
   border: 1px dashed #333;
   border-radius: 2px;
-  width: 100%;
-  aspect-ratio: 1 / 1;
+  height: 100%;
+  min-height: 260px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -3908,6 +3907,17 @@ body.is-booting .sidebar .sb-footer {
     gap: 16px !important;
   }
 
+  .dashboard-revamp .project-thumb {
+    aspect-ratio: 16 / 9;
+    height: auto;
+  }
+
+  .dashboard-revamp .new-card {
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    min-height: auto;
+  }
+
   .overview-revamp {
     padding: 24px 20px 80px !important;
   }
@@ -4319,7 +4329,7 @@ input[type="range"]::-moz-range-thumb {
 
 .task-header {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 12px;
 }
 
@@ -4365,6 +4375,8 @@ input[type="range"]::-moz-range-thumb {
   font-weight: 500;
   outline: none;
   width: 100%;
+  padding: 0;
+  margin: 0;
 }
 
 .task-title-input.done-text, .checklist-input.done-text {
@@ -4403,7 +4415,7 @@ input[type="range"]::-moz-range-thumb {
 
 .task-checklist-item {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 12px;
 }
 
@@ -4415,6 +4427,8 @@ input[type="range"]::-moz-range-thumb {
   font-size: 12px;
   outline: none;
   flex: 1;
+  padding: 0;
+  margin: 0;
 }
 
 .task-checklist-add {

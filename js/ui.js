@@ -319,8 +319,8 @@ function renderProjGrid() {
         card.innerHTML = `
       <div class="project-thumb">${p.thumbnail ? `<img src="${p.thumbnail}" alt="" draggable="false">` : `<i class="ti ti-video project-thumb-icon" style="color:#222;"></i>`}</div>
       <div class="project-info" style="padding:16px;">
-        <div style="display:flex; justify-content:flex-start; align-items:center; gap:8px;">
-          <div class="project-title" style="margin-bottom:0; font-size:11px; font-weight:600; color:#DDDDDE; font-family: 'IBM Plex Mono', monospace; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${p.title || 'UNTITLED'}</div>
+        <div style="display:flex; justify-content:space-between; align-items:center; gap:8px;">
+          <div class="project-title" style="flex: 1; margin-bottom:0; font-size:11px; font-weight:600; color:#DDDDDE; font-family: 'IBM Plex Mono', monospace; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${p.title || 'UNTITLED'}</div>
           <button class="icon-btn del-proj-btn" data-pid="${p.id}" style="padding:0; color:#555; display:flex; align-items:center;"><i class="ti ti-trash"></i></button>
         </div>
         

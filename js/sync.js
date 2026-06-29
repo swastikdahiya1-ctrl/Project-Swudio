@@ -141,9 +141,15 @@ async function pushProject(p, userId) {
         shots: p.shots || [],
         ideas: p.ideas || [],
         tasks: p.tasks || [],
+        projectBoardData: p.projectBoardData || { elements: [], paths: [] },
+        tasksSort: p.tasksSort || 'due_date',
+        tasksFilter: p.tasksFilter || 'all',
         lastEdited: p.lastEdited || new Date().toISOString()
     });
-    if (error) console.error(`Error syncing project ${p.id}:`, error);
+    if (error) {
+        console.error(`Error syncing project ${p.id}:`, error);
+        throw error;
+    }
 }
 
 async function pushIdea(i, userId) {
@@ -155,7 +161,10 @@ async function pushIdea(i, userId) {
         text: i.text || '',
         created_at: i.created_at || new Date().toISOString()
     });
-    if (error) console.error(`Error syncing idea ${i.id}:`, error);
+    if (error) {
+        console.error(`Error syncing idea ${i.id}:`, error);
+        throw error;
+    }
 }
 
 async function pushArchive(a, userId) {
@@ -168,7 +177,10 @@ async function pushArchive(a, userId) {
         originalData: a.data || {},
         archivedAt: a.archivedAt || new Date().toISOString()
     });
-    if (error) console.error(`Error syncing archive ${a.data.id}:`, error);
+    if (error) {
+        console.error(`Error syncing archive ${a.data.id}:`, error);
+        throw error;
+    }
 }
 
 let syncTimeout = null;
@@ -228,13 +240,66 @@ export async function syncDown() {
         if (iRes.error) throw iRes.error;
         if (aRes.error) throw aRes.error;
 
-        state.projects = pRes.data || [];
-        state.ideas = iRes.data || [];
-        state.archives = (aRes.data || []).map(a => ({
+        // Safely merge projects based on lastEdited
+        const cloudProjects = pRes.data || [];
+        const mergedProjects = [];
+        const allProjectIds = new Set([...cloudProjects.map(p => p.id), ...(state.projects || []).map(p => p.id)]);
+        for (const id of allProjectIds) {
+            const cp = cloudProjects.find(p => p.id === id);
+            const lp = (state.projects || []).find(p => p.id === id);
+            if (cp && lp) {
+                const cTime = new Date(cp.lastEdited || 0).getTime();
+                const lTime = new Date(lp.lastEdited || 0).getTime();
+                mergedProjects.push(cTime >= lTime ? cp : lp);
+            } else if (cp) {
+                mergedProjects.push(cp);
+            } else {
+                mergedProjects.push(lp);
+            }
+        }
+        state.projects = mergedProjects;
+
+        // Safely merge ideas based on created_at / lastEdited
+        const cloudIdeas = iRes.data || [];
+        const mergedIdeas = [];
+        const allIdeaIds = new Set([...cloudIdeas.map(i => i.id), ...(state.ideas || []).map(i => i.id)]);
+        for (const id of allIdeaIds) {
+            const ci = cloudIdeas.find(i => i.id === id);
+            const li = (state.ideas || []).find(i => i.id === id);
+            if (ci && li) {
+                const cTime = new Date(ci.lastEdited || ci.created_at || ci.createdAt || 0).getTime();
+                const lTime = new Date(li.lastEdited || li.created_at || li.createdAt || 0).getTime();
+                mergedIdeas.push(cTime >= lTime ? ci : li);
+            } else if (ci) {
+                mergedIdeas.push(ci);
+            } else {
+                mergedIdeas.push(li);
+            }
+        }
+        state.ideas = mergedIdeas;
+
+        // Safely merge archives based on archivedAt
+        const cloudArchives = (aRes.data || []).map(a => ({
             type: a.type,
             data: a.originalData,
             archivedAt: a.archivedAt
         }));
+        const mergedArchives = [];
+        const allArchiveIds = new Set([...cloudArchives.map(a => a.data.id), ...(state.archives || []).map(a => a.data?.id || a.id)]);
+        for (const id of allArchiveIds) {
+            const ca = cloudArchives.find(a => a.data.id === id);
+            const la = (state.archives || []).find(a => a.data?.id === id || a.id === id);
+            if (ca && la) {
+                const cTime = new Date(ca.archivedAt || 0).getTime();
+                const lTime = new Date(la.archivedAt || 0).getTime();
+                mergedArchives.push(cTime >= lTime ? ca : la);
+            } else if (ca) {
+                mergedArchives.push(ca);
+            } else {
+                mergedArchives.push(la);
+            }
+        }
+        state.archives = mergedArchives;
 
         // Save downloaded state locally to IndexedDB
         saveAll();

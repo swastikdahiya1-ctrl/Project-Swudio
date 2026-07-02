@@ -66,6 +66,11 @@ function sanitizeRecords() {
     if (!Array.isArray(state.ideas)) state.ideas = [];
     if (!Array.isArray(state.archives)) state.archives = [];
 
+    // Filter out any corrupted records that are missing an ID (which can happen from previous database transitions)
+    state.projects = state.projects.filter(p => p && p.id);
+    state.ideas = state.ideas.filter(i => i && i.id);
+    state.archives = state.archives.filter(a => a && a.data && a.data.id);
+
     // Purge archives older than 30 days
     const now = Date.now();
     const thirtyDays = 30 * 24 * 60 * 60 * 1000;

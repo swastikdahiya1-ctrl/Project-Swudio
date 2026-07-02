@@ -1,5 +1,5 @@
 import { state } from './state.js';
-import { uid, openConfirmModal } from './utils.js';
+import { uid, openConfirmModal, showUndoToast } from './utils.js';
 import { saveAll } from './db.js';
 
 export function renderBoard(c, p) {
@@ -142,9 +142,17 @@ export function renderBoard(c, p) {
 
     document.getElementById('board-trash').addEventListener('click', () => {
         if (selectedElementId) {
-            p.projectBoardData.elements = p.projectBoardData.elements.filter(x => x.id !== selectedElementId);
-            selectedElementId = null;
-            saveState(); draw();
+            const deletedEl = p.projectBoardData.elements.find(x => x.id === selectedElementId);
+            const idx = p.projectBoardData.elements.findIndex(x => x.id === selectedElementId);
+            if (idx > -1) {
+                p.projectBoardData.elements.splice(idx, 1);
+                selectedElementId = null;
+                saveState(); draw();
+                showUndoToast("Element deleted.", () => {
+                    p.projectBoardData.elements.splice(idx, 0, deletedEl);
+                    saveState(); draw();
+                });
+            }
         }
     });
 

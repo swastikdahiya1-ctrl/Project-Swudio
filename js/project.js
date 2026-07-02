@@ -1,5 +1,5 @@
 import { state, BLOCK_PALETTE } from './state.js';
-import { uid, formatDateTime, openPromptModal, openModal, closeModal, openConfirmModal } from './utils.js';
+import { uid, formatDateTime, openPromptModal, openModal, closeModal, openConfirmModal, showUndoToast } from './utils.js';
 import { saveAll } from './db.js';
 import { renderShots } from './shots.js';
 import { renderBoard } from './board.js';
@@ -252,7 +252,16 @@ function renderOverview(c, p) {
     
         il.querySelectorAll('.del-pidea').forEach(btn => btn.addEventListener('click', () => {
             import('./utils.js').then(u => u.openConfirmModal("Delete Idea", "Are you sure you want to delete this idea?", "Delete", () => {
-                p.ideas = p.ideas.filter(x => x.id !== btn.dataset.id); saveAll(); renderPi();
+                const idea = p.ideas.find(x => x.id === btn.dataset.id);
+                const idx = p.ideas.findIndex(x => x.id === btn.dataset.id);
+                if(idx > -1) {
+                    p.ideas.splice(idx, 1);
+                    saveAll(); renderPi();
+                    u.showUndoToast("Idea deleted.", () => {
+                        p.ideas.splice(idx, 0, idea);
+                        saveAll(); renderPi();
+                    });
+                }
             }));
         }));
         
@@ -633,8 +642,16 @@ function refreshVS(p) {
 
     list.querySelectorAll('.del-vs-btn').forEach(btn => btn.addEventListener('click', () => {
         openConfirmModal("Delete Block", "Delete this script block?", "Delete", () => {
-            p.visualScriptBlocks = p.visualScriptBlocks.filter(x => x.id !== btn.dataset.id);
-            saveAll(); refreshVS(p);
+            const block = p.visualScriptBlocks.find(x => x.id === btn.dataset.id);
+            const idx = p.visualScriptBlocks.findIndex(x => x.id === btn.dataset.id);
+            if(idx > -1) {
+                p.visualScriptBlocks.splice(idx, 1);
+                saveAll(); refreshVS(p);
+                showUndoToast("Script block deleted.", () => {
+                    p.visualScriptBlocks.splice(idx, 0, block);
+                    saveAll(); refreshVS(p);
+                });
+            }
         });
     }));
 

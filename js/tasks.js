@@ -1,6 +1,6 @@
 import { state } from './state.js';
 import { saveAll } from './db.js';
-import { uid, openConfirmModal } from './utils.js';
+import { uid, openConfirmModal, showUndoToast } from './utils.js';
 
 export function renderProjectTasks(m, p) {
     if (!p.tasks) p.tasks = [];
@@ -204,10 +204,20 @@ function renderTasksList(m, p) {
 
         taskEl.querySelector('.del-task-btn').addEventListener('click', () => {
             openConfirmModal("Delete Task", "Are you sure you want to delete this task?", "Delete", () => {
-                p.tasks = p.tasks.filter(t => t.id !== task.id);
-                p.lastEdited = new Date().toISOString();
-                saveAll();
-                renderProjectTasks(m, p);
+                const deletedTask = p.tasks.find(t => t.id === task.id);
+                const taskIdx = p.tasks.findIndex(t => t.id === task.id);
+                if(taskIdx > -1) {
+                    p.tasks.splice(taskIdx, 1);
+                    p.lastEdited = new Date().toISOString();
+                    saveAll();
+                    renderProjectTasks(m, p);
+                    showUndoToast("Task deleted.", () => {
+                        p.tasks.splice(taskIdx, 0, deletedTask);
+                        p.lastEdited = new Date().toISOString();
+                        saveAll();
+                        renderProjectTasks(m, p);
+                    });
+                }
             });
         });
 
@@ -243,10 +253,16 @@ function renderTasksList(m, p) {
                 chkInp.style.height = chkInp.scrollHeight + 'px';
             }, 0);
             cEl.querySelector('.del-check-btn').addEventListener('click', () => {
-                task.checklists.splice(idx, 1);
+                const deletedChk = task.checklists.splice(idx, 1)[0];
                 p.lastEdited = new Date().toISOString();
                 saveAll();
                 renderProjectTasks(m, p);
+                showUndoToast("Checklist item deleted.", () => {
+                    task.checklists.splice(idx, 0, deletedChk);
+                    p.lastEdited = new Date().toISOString();
+                    saveAll();
+                    renderProjectTasks(m, p);
+                });
             });
         });
     });

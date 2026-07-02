@@ -1,5 +1,5 @@
 import { state } from './state.js';
-import { uid, formatDateTime } from './utils.js';
+import { uid, formatDateTime, showUndoToast } from './utils.js';
 import { saveAll } from './db.js';
 import { openConfirmModal, openPromptModal, closeModal, openModal } from './utils.js';
 import { nav, render, bootApp } from './main.js';
@@ -390,6 +390,11 @@ function renderProjGrid() {
                         state.archives.push({ type: 'project', data: deleted, archivedAt: new Date().toISOString() });
                         deleteProjectFromCloud(p.id);
                         saveAll(); renderDashboard(document.getElementById('main')); renderSidebar();
+                        showUndoToast("Project deleted.", () => {
+                            state.projects.splice(idx, 0, deleted);
+                            state.archives = state.archives.filter(a => a.data.id !== p.id);
+                            saveAll(); renderDashboard(document.getElementById('main')); renderSidebar();
+                        });
                     }
                 } else {
                     openConfirmModal("Error", "Name didn't match. Deletion aborted.", "OK", () => { });
@@ -434,9 +439,17 @@ function renderIdeasList() {
 
     list.querySelectorAll('.del-idea').forEach(b => b.addEventListener('click', () => {
         openConfirmModal('Delete Idea', 'Are you sure you want to delete this idea?', 'Delete', () => {
-            state.ideas = state.ideas.filter(i => i.id !== b.dataset.id); 
-            deleteIdeaFromCloud(b.dataset.id);
-            saveAll(); renderIdeasList();
+            const idea = state.ideas.find(i => i.id === b.dataset.id);
+            const idx = state.ideas.findIndex(i => i.id === b.dataset.id);
+            if(idx > -1) {
+                state.ideas.splice(idx, 1);
+                deleteIdeaFromCloud(b.dataset.id);
+                saveAll(); renderIdeasList();
+                showUndoToast("Idea deleted.", () => {
+                    state.ideas.splice(idx, 0, idea);
+                    saveAll(); renderIdeasList();
+                });
+            }
         });
     }));
     list.querySelectorAll('.edit-idea').forEach(btn => btn.addEventListener('click', e => {
@@ -511,8 +524,17 @@ export function renderAllIdeas(m) {
             row.querySelector('.del').addEventListener('click', () => {
                 openConfirmModal('DELETE IDEA', 'Permanently delete this idea from your inbox?', 'DELETE', () => {
                     const idx = allIdeas.findIndex(x => x.id === idObj.id);
-                    if (idx > -1) allIdeas.splice(idx, 1);
-                    saveAll(); renderList();
+                    if (idx > -1) {
+                        const idea = allIdeas.splice(idx, 1)[0];
+                        const stateIdx = state.ideas.findIndex(i => i.id === idea.id);
+                        if(stateIdx > -1) state.ideas.splice(stateIdx, 1);
+                        deleteIdeaFromCloud(idea.id);
+                        saveAll(); renderIdeasOverview(); renderSidebar();
+                        showUndoToast("Idea deleted.", () => {
+                            if(stateIdx > -1) state.ideas.splice(stateIdx, 0, idea);
+                            saveAll(); renderIdeasOverview(); renderSidebar();
+                        });
+                    }
                 });
             });
             listCon.appendChild(row);
@@ -595,6 +617,14 @@ export function renderTrash(m) {
             const idx = state.archives.findIndex(x => x.data.id === item.data.id);
             if (idx > -1) {
                 const recovered = state.archives.splice(idx, 1)[0];
+                
+                showUndoToast("Item recovered.", () => {
+                    state.archives.splice(idx, 0, recovered);
+                    if (recovered.type === 'project') state.projects = state.projects.filter(p => p.id !== recovered.data.id);
+                    if (recovered.type === 'idea') state.ideas = state.ideas.filter(i => i.id !== recovered.data.id);
+                    saveAll();
+                    renderArchive(filterType);
+                });
                 deleteArchiveFromCloud(recovered.data.id);
                 if (recovered.type === 'project') state.projects.push(recovered.data);
                 else if (recovered.type === 'shot') {
@@ -615,7 +645,16 @@ export function renderTrash(m) {
 
         row.querySelector('.del-btn').addEventListener('click', () => {
             openConfirmModal('DELETE FOREVER', 'Permanently destroy this item? It cannot be recovered.', 'DESTROY', () => {
-                state.archives = state.archives.filter(x => x.data.id !== item.data.id);
+                const idx = state.archives.findIndex(x => x.data.id === item.data.id);
+                if (idx > -1) {
+                    const deleted = state.archives.splice(idx, 1)[0];
+                    deleteArchiveFromCloud(item.data.id);
+                    saveAll(); renderArchive(filterType);
+                    showUndoToast("Archive item deleted permanently.", () => {
+                        state.archives.splice(idx, 0, deleted);
+                        saveAll(); renderArchive(filterType);
+                    });
+                }
                 deleteArchiveFromCloud(item.data.id);
                 saveAll(); renderTrash(m);
             });
@@ -702,6 +741,12 @@ export function openAssignModal(text, existingId = null) {
             const ideaIndex = state.ideas.findIndex(i => i.id === existingId);
             if (ideaIndex > -1) {
                 const idea = state.ideas.splice(ideaIndex, 1)[0];
+                deleteIdeaFromCloud(idea.id);
+                saveAll(); renderProjIdeas(pid); renderSidebar();
+                showUndoToast("Idea deleted.", () => {
+                    state.ideas.splice(ideaIndex, 0, idea);
+                    saveAll(); renderProjIdeas(pid); renderSidebar();
+                });
                 if (pid) {
                     const pr = state.projects.find(p => p.id === pid);
                     if (pr) { pr.ideas = pr.ideas || []; pr.ideas.push(idea); }

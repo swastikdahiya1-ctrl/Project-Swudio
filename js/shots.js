@@ -1,5 +1,5 @@
 import { state } from './state.js';
-import { uid, openPromptModal, openConfirmModal } from './utils.js';
+import { uid, openPromptModal, openConfirmModal, showUndoToast } from './utils.js';
 import { saveAll, makeChecklist } from './db.js';
 
 function getShotStatus(s) {
@@ -232,6 +232,12 @@ export function renderShots(c, p) {
                 state.archives.push({ type: 'shot', data: deleted, archivedAt: new Date().toISOString() });
                 p.shots.forEach((x, i) => x.number = i + 1);
                 p.lastEdited = new Date().toISOString(); saveAll(); renderShots(c, p);
+                showUndoToast("Shot deleted.", () => {
+                    p.shots.splice(idx, 0, deleted);
+                    state.archives = state.archives.filter(a => a.data.id !== deleted.id);
+                    p.shots.forEach((x, i) => x.number = i + 1);
+                    p.lastEdited = new Date().toISOString(); saveAll(); renderShots(c, p);
+                });
             }
         });
     }));
@@ -473,6 +479,12 @@ function renderShotDetail(c, p, sid) {
                 state.archives.push({ type: 'shot', data: deleted, archivedAt: new Date().toISOString() });
                 p.shots.forEach((x, i) => x.number = i + 1);
                 state.S.shotId = null; p.lastEdited = new Date().toISOString(); saveAll(); import('./main.js').then(m => m.render());
+                showUndoToast("Shot deleted.", () => {
+                    p.shots.splice(idx, 0, deleted);
+                    state.archives = state.archives.filter(a => a.data.id !== deleted.id);
+                    p.shots.forEach((x, i) => x.number = i + 1);
+                    state.S.shotId = deleted.id; p.lastEdited = new Date().toISOString(); saveAll(); import('./main.js').then(m => m.render());
+                });
             }
         });
     });
@@ -560,9 +572,14 @@ function renderShotDetail(c, p, sid) {
             p.lastEdited = new Date().toISOString(); saveAll(); renderShotDetail(c, p, sid); import('./ui.js').then(ui => ui.renderSidebar());
         }));
         tc.querySelectorAll('.task-del').forEach(btn => btn.addEventListener('click', () => {
-            s.tasks.splice(btn.dataset.idx, 1);
+            const deleted = s.tasks.splice(btn.dataset.idx, 1)[0];
             getShotStatus(s);
             p.lastEdited = new Date().toISOString(); saveAll(); renderShotDetail(c, p, sid); import('./ui.js').then(ui => ui.renderSidebar());
+            showUndoToast("Task deleted.", () => {
+                s.tasks.splice(btn.dataset.idx, 0, deleted);
+                getShotStatus(s);
+                p.lastEdited = new Date().toISOString(); saveAll(); renderShotDetail(c, p, sid); import('./ui.js').then(ui => ui.renderSidebar());
+            });
         }));
     };
     rt();
@@ -603,7 +620,12 @@ function renderShotDetail(c, p, sid) {
         `;
 
         bg.querySelectorAll('.sb-del-btn').forEach(b => b.addEventListener('click', e => {
-            s.storyboards.splice(b.dataset.idx, 1); p.lastEdited = new Date().toISOString(); saveAll(); renderSB();
+            const deleted = s.storyboards.splice(b.dataset.idx, 1)[0]; 
+            p.lastEdited = new Date().toISOString(); saveAll(); renderSB();
+            showUndoToast("Frame deleted.", () => {
+                s.storyboards.splice(b.dataset.idx, 0, deleted);
+                p.lastEdited = new Date().toISOString(); saveAll(); renderSB();
+            });
         }));
         bg.querySelectorAll('.sb-caption-input').forEach(ta => ta.addEventListener('input', e => {
             s.storyboards[ta.dataset.idx].caption = e.target.value;
@@ -663,6 +685,11 @@ function renderShotDetail(c, p, sid) {
                 p.ideas = p.ideas || [];
                 p.ideas.push(idea); // revert to project ideas
                 p.lastEdited = new Date().toISOString(); saveAll(); renderIdeas();
+                showUndoToast("Idea removed from shot.", () => {
+                    p.ideas = p.ideas.filter(i => i.id !== idea.id);
+                    s.ideas.splice(idx, 0, idea);
+                    p.lastEdited = new Date().toISOString(); saveAll(); renderIdeas();
+                });
             }
         }));
     };

@@ -260,15 +260,22 @@ export function renderSidebar() {
 
 export function renderDashboard(m) {
     const activeCount = state.projects.length < 10 ? '0' + state.projects.length : state.projects.length;
+    const userId = window.currentUser ? window.currentUser.id : 'local_user';
+    const savedName = localStorage.getItem('studio_userName_' + userId);
+    const displayName = savedName ? savedName : 'USER';
+
     m.innerHTML = `<div class="dashboard-revamp">
     <div class="hud-tl hud-corner"></div><div class="hud-tr hud-corner"></div><div class="hud-bl hud-corner"></div><div class="hud-br hud-corner"></div>
 
     <div class="page-topbar">
       <div class="welcome">
-        <h1>WELCOME BACK, SWASTIK.</h1>
+        <h1>WELCOME BACK, <span id="dash-display-name">${displayName.toUpperCase()}</span>. <i class="ti ti-pencil" id="edit-name-btn" style="font-size: 16px; cursor: pointer; color: var(--text-muted); vertical-align: middle; margin-left: 8px; transition: color 0.2s;" title="Edit Name" onmouseover="this.style.color='#FFF'" onmouseout="this.style.color='var(--text-muted)'"></i></h1>
         <p>PICK UP WHERE YOU LEFT OFF OR START SOMETHING NEW.</p>
       </div>
-      <button class="btn btn-primary" id="btn-new-proj"><i class="ti ti-plus" style="font-size:12px;"></i> <span>NEW PROJECT</span></button>
+      <div style="display: flex; align-items: center; gap: 24px;">
+          <button class="btn btn-primary" id="btn-new-proj"><i class="ti ti-plus" style="font-size:12px;"></i> <span>NEW PROJECT</span></button>
+          <img src="logo.svg" alt="Logo" style="width: 32px; height: 32px; border-radius: 6px;">
+      </div>
     </div>
 
     <div class="dash-section-header">
@@ -296,6 +303,7 @@ export function renderDashboard(m) {
     renderIdeasList();
 
     document.getElementById('btn-new-proj').addEventListener('click', () => openNewProjModal());
+    document.getElementById('edit-name-btn').addEventListener('click', () => openNamePromptModal());
     document.getElementById('idea-send-btn').addEventListener('click', handleIdeaSend);
     document.getElementById('idea-inp').addEventListener('keydown', e => { if (e.key === 'Enter') handleIdeaSend(); });
 
@@ -1295,3 +1303,72 @@ export function openSettingsModal() {
         window._autoSaveDelay = parseInt(e.target.value);
     });
 }
+
+export function openNamePromptModal() {
+    const modalDiv = document.createElement('div');
+    modalDiv.className = 'modal-backdrop';
+    modalDiv.innerHTML = `
+      <div class="modal">
+          <div class="modal-header">
+              <h2>PROFILE SETTINGS</h2>
+          </div>
+          <div class="modal-body" style="padding: 24px;">
+              <p style="font-size: 14px; color: var(--text-muted); margin-bottom: 16px;">What should we call you?</p>
+              <input type="text" id="name-prompt-inp" class="modal-input" placeholder="Your name" style="width: 100%; box-sizing: border-box;" autocomplete="off" />
+          </div>
+          <div class="modal-footer" style="padding-top: 16px;">
+              <button class="btn btn-ghost" id="name-prompt-later">SET LATER</button>
+              <button class="btn btn-primary" id="name-prompt-confirm">CONFIRM</button>
+          </div>
+      </div>
+    `;
+    document.getElementById('modal-root').appendChild(modalDiv);
+
+    // Fade in
+    import('./lib/gsap.min.js').then(() => {
+        if(window.gsap) {
+            gsap.fromTo(modalDiv, { opacity: 0 }, { opacity: 1, duration: 0.2 });
+            gsap.fromTo(modalDiv.querySelector('.modal'), { scale: 0.95, opacity: 0, y: 10 }, { scale: 1, opacity: 1, y: 0, duration: 0.3, ease: 'back.out(1.5)' });
+        }
+    });
+
+    const close = () => {
+        if(window.gsap) {
+            gsap.to(modalDiv, { opacity: 0, duration: 0.2, onComplete: () => modalDiv.remove() });
+            gsap.to(modalDiv.querySelector('.modal'), { scale: 0.95, y: 10, duration: 0.2 });
+        } else {
+            modalDiv.remove();
+        }
+    };
+
+    const inp = modalDiv.querySelector('#name-prompt-inp');
+    const userId = window.currentUser ? window.currentUser.id : 'local_user';
+    const currentName = localStorage.getItem('studio_userName_' + userId);
+    if(currentName) inp.value = currentName;
+    
+    setTimeout(() => inp.focus(), 100);
+
+    modalDiv.querySelector('#name-prompt-later').addEventListener('click', close);
+    modalDiv.querySelector('#name-prompt-confirm').addEventListener('click', () => {
+        const val = inp.value.trim();
+        if (val) {
+            localStorage.setItem('studio_userName_' + userId, val);
+            if (state.S.view === 'dashboard') {
+                import('./main.js').then(m => m.render());
+            }
+        }
+        close();
+    });
+    
+    inp.addEventListener('keydown', e => {
+        if (e.key === 'Enter') modalDiv.querySelector('#name-prompt-confirm').click();
+    });
+}
+
+export function checkNamePrompt() {
+    const userId = window.currentUser ? window.currentUser.id : 'local_user';
+    if (!localStorage.getItem('studio_userName_' + userId)) {
+        openNamePromptModal();
+    }
+}
+

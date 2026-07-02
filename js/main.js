@@ -154,9 +154,11 @@ document.addEventListener('DOMContentLoaded', () => {
         if (isConfigured() && !bypassAuth) {
             const user = await getCurrentUser();
             if (user) {
+                window.currentUser = user;
                 // Sync cloud data to local IndexedDB first on boot
                 await syncDown();
                 bootApp();
+                import('./ui.js').then(ui => ui.checkNamePrompt());
             } else {
                 // If Supabase is configured but no session exists, show login screen
                 import('./ui.js').then(ui => {
@@ -165,7 +167,9 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         } else {
             // Local-only fallback
+            window.currentUser = { id: 'local_user' };
             bootApp();
+            import('./ui.js').then(ui => ui.checkNamePrompt());
         }
     });
 });

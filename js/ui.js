@@ -383,7 +383,7 @@ function renderProjGrid() {
         card.querySelector('.del-proj-btn').addEventListener('click', (e) => {
             e.stopPropagation();
             openPromptModal("Delete Project", `Type "${p.title}" to confirm deletion.`, "Confirm Name", "", (val) => {
-                if (val === p.title) {
+                if (val.trim().toLowerCase() === (p.title || '').trim().toLowerCase()) {
                     const idx = state.projects.findIndex(x => x.id === p.id);
                     if (idx > -1) {
                         const deleted = state.projects.splice(idx, 1)[0];
@@ -526,13 +526,11 @@ export function renderAllIdeas(m) {
                     const idx = allIdeas.findIndex(x => x.id === idObj.id);
                     if (idx > -1) {
                         const idea = allIdeas.splice(idx, 1)[0];
-                        const stateIdx = state.ideas.findIndex(i => i.id === idea.id);
-                        if(stateIdx > -1) state.ideas.splice(stateIdx, 1);
                         deleteIdeaFromCloud(idea.id);
-                        saveAll(); renderIdeasOverview(); renderSidebar();
+                        saveAll(); renderList();
                         showUndoToast("Idea deleted.", () => {
-                            if(stateIdx > -1) state.ideas.splice(stateIdx, 0, idea);
-                            saveAll(); renderIdeasOverview(); renderSidebar();
+                            allIdeas.splice(idx, 0, idea);
+                            saveAll(); renderList();
                         });
                     }
                 });

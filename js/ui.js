@@ -49,7 +49,7 @@ export function renderSidebar() {
 
     sb.innerHTML = `
     <div class="sb-logo-wrap" style="display:flex; align-items:center; gap:12px;">
-      <div class="sb-logo">S</div>
+      <img src="logo.png" alt="Logo" class="sb-logo" style="width: 32px; height: 32px; border-radius: 6px; padding: 0; background: transparent; border: none; object-fit: contain;">
       ${authBtnHtml}
     </div>
     
@@ -274,7 +274,6 @@ export function renderDashboard(m) {
       </div>
       <div style="display: flex; align-items: center; gap: 24px;">
           <button class="btn btn-primary" id="btn-new-proj"><i class="ti ti-plus" style="font-size:12px;"></i> <span>NEW PROJECT</span></button>
-          <img src="logo.svg" alt="Logo" style="width: 32px; height: 32px; border-radius: 6px;">
       </div>
     </div>
 

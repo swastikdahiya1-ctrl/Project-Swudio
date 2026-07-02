@@ -269,7 +269,7 @@ export function renderDashboard(m) {
 
     <div class="page-topbar">
       <div class="welcome">
-        <h1>WELCOME BACK, <span id="dash-display-name">${displayName.toUpperCase()}</span>. <i class="ti ti-pencil" id="edit-name-btn" style="font-size: 16px; cursor: pointer; color: var(--text-muted); vertical-align: middle; margin-left: 8px; transition: color 0.2s;" title="Edit Name" onmouseover="this.style.color='#FFF'" onmouseout="this.style.color='var(--text-muted)'"></i></h1>
+        <h1>WELCOME BACK, <span id="dash-display-name">${displayName.toUpperCase()}</span>.</h1>
         <p>PICK UP WHERE YOU LEFT OFF OR START SOMETHING NEW.</p>
       </div>
       <div style="display: flex; align-items: center; gap: 24px;">
@@ -303,7 +303,6 @@ export function renderDashboard(m) {
     renderIdeasList();
 
     document.getElementById('btn-new-proj').addEventListener('click', () => openNewProjModal());
-    document.getElementById('edit-name-btn').addEventListener('click', () => openNamePromptModal());
     document.getElementById('idea-send-btn').addEventListener('click', handleIdeaSend);
     document.getElementById('idea-inp').addEventListener('keydown', e => { if (e.key === 'Enter') handleIdeaSend(); });
 
@@ -1045,6 +1044,10 @@ export function openSettingsModal() {
                 <div style="flex:1; padding:20px; background:#0B0B0B; position:relative;">
                     
                     <div id="tab-account" class="settings-content" style="display:${lastSettingsMainTab==='tab-account'?'block':'none'};">
+                        <div class="sec-label">Profile</div>
+                        <p style="font-size:11px; color:#666; margin-bottom:12px;">Change the display name shown on your dashboard.</p>
+                        <button class="btn btn-ghost" id="stgs-change-name-btn" style="width:100%; margin-bottom:24px; font-family:'IBM Plex Mono', monospace; justify-content:center;">CHANGE DASHBOARD NAME</button>
+                        
                         <div class="sec-label">Danger Zone</div>
                         <p style="font-size:11px; color:#666; margin-bottom:12px;">Deleting your account will permanently wipe all your data from the cloud. This cannot be undone.</p>
                         <button class="btn btn-danger" id="init-delete-btn" style="width:100%; font-family:'IBM Plex Mono', monospace; justify-content:center;">DELETE ACCOUNT</button>
@@ -1208,6 +1211,14 @@ export function openSettingsModal() {
         renderBootSettings();
     });
 
+    const changeNameBtn = document.getElementById('stgs-change-name-btn');
+    if (changeNameBtn) {
+        changeNameBtn.addEventListener('click', () => {
+            modalDiv.remove();
+            openNamePromptModal();
+        });
+    }
+
     const initDelBtn = document.getElementById('init-delete-btn');
     const confZone = document.getElementById('delete-confirm-zone');
     const confInput = document.getElementById('delete-confirm-input');
@@ -1368,7 +1379,11 @@ export function openNamePromptModal() {
 export function checkNamePrompt() {
     const userId = window.currentUser ? window.currentUser.id : 'local_user';
     if (!localStorage.getItem('studio_userName_' + userId)) {
-        openNamePromptModal();
+        if (state.projects.length === 0 && state.ideas.length === 0 && state.archives.length === 0) {
+            openNamePromptModal();
+        } else {
+            localStorage.setItem('studio_userName_' + userId, 'SWASTIK');
+        }
     }
 }
 

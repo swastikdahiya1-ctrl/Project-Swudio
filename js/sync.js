@@ -133,18 +133,8 @@ async function pushProject(p, userId) {
     const { error } = await supabase.from('projects').upsert({
         id: p.id,
         user_id: userId,
-        title: p.title || 'UNTITLED',
-        description: p.description || '',
-        thumbnail: p.thumbnail || '',
-        pinned: !!p.pinned,
-        visualScriptBlocks: p.visualScriptBlocks || [],
-        shots: p.shots || [],
-        ideas: p.ideas || [],
-        tasks: p.tasks || [],
-        projectBoardData: p.projectBoardData || { elements: [], paths: [] },
-        tasksSort: p.tasksSort || 'due_date',
-        tasksFilter: p.tasksFilter || 'all',
-        lastEdited: p.lastEdited || new Date().toISOString()
+        lastEdited: p.lastEdited || new Date().toISOString(),
+        data: p
     });
     if (error) {
         console.error(`Error syncing project ${p.id}:`, error);
@@ -158,8 +148,8 @@ async function pushIdea(i, userId) {
     const { error } = await supabase.from('ideas').upsert({
         id: i.id,
         user_id: userId,
-        text: i.text || '',
-        created_at: i.created_at || new Date().toISOString()
+        lastEdited: i.lastEdited || i.created_at || new Date().toISOString(),
+        data: i
     });
     if (error) {
         console.error(`Error syncing idea ${i.id}:`, error);
@@ -174,8 +164,8 @@ async function pushArchive(a, userId) {
         id: a.data.id,
         user_id: userId,
         type: a.type || 'project',
-        originalData: a.data || {},
-        archivedAt: a.archivedAt || new Date().toISOString()
+        archivedAt: a.archivedAt || new Date().toISOString(),
+        data: a.data || {}
     });
     if (error) {
         console.error(`Error syncing archive ${a.data.id}:`, error);
@@ -241,7 +231,7 @@ export async function syncDown() {
         if (aRes.error) throw aRes.error;
 
         // Safely merge projects based on lastEdited
-        const cloudProjects = pRes.data || [];
+        const cloudProjects = (pRes.data || []).map(row => row.data).filter(d => d);
         const mergedProjects = [];
         const allProjectIds = new Set([...cloudProjects.map(p => p.id), ...(state.projects || []).map(p => p.id)]);
         for (const id of allProjectIds) {
@@ -260,7 +250,7 @@ export async function syncDown() {
         state.projects = mergedProjects;
 
         // Safely merge ideas based on created_at / lastEdited
-        const cloudIdeas = iRes.data || [];
+        const cloudIdeas = (iRes.data || []).map(row => row.data).filter(d => d);
         const mergedIdeas = [];
         const allIdeaIds = new Set([...cloudIdeas.map(i => i.id), ...(state.ideas || []).map(i => i.id)]);
         for (const id of allIdeaIds) {
@@ -281,7 +271,7 @@ export async function syncDown() {
         // Safely merge archives based on archivedAt
         const cloudArchives = (aRes.data || []).map(a => ({
             type: a.type,
-            data: a.originalData,
+            data: a.data || a.originalData || {},
             archivedAt: a.archivedAt
         }));
         const mergedArchives = [];

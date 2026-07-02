@@ -52,6 +52,7 @@ export function renderProjectTasks(m, p) {
         btn.addEventListener('click', (e) => {
             e.stopPropagation();
             p.tasksFilter = e.currentTarget.dataset.filter;
+            p.lastEdited = new Date().toISOString();
             saveAll();
             renderProjectTasks(m, p);
         });
@@ -61,6 +62,7 @@ export function renderProjectTasks(m, p) {
     if (sortSel) {
         sortSel.addEventListener('change', (e) => {
             p.tasksSort = e.target.value;
+            p.lastEdited = new Date().toISOString();
             saveAll();
             renderProjectTasks(m, p);
         });
@@ -79,6 +81,7 @@ export function renderProjectTasks(m, p) {
             checklists: []
         };
         p.tasks.push(newTask);
+        p.lastEdited = new Date().toISOString();
         saveAll();
         renderProjectTasks(m, p);
         });
@@ -176,6 +179,7 @@ function renderTasksList(m, p) {
         const titleInp = taskEl.querySelector('.task-title-input');
         titleInp.addEventListener('change', (e) => {
             task.title = e.target.value;
+            p.lastEdited = new Date().toISOString();
             saveAll();
         });
         titleInp.addEventListener('input', function() {
@@ -192,6 +196,7 @@ function renderTasksList(m, p) {
         dateInp.addEventListener('change', (e) => {
             if(e.target.value) {
                 task.dueDate = new Date(e.target.value).toISOString();
+                p.lastEdited = new Date().toISOString();
                 saveAll();
                 renderProjectTasks(m, p);
             }
@@ -200,6 +205,7 @@ function renderTasksList(m, p) {
         taskEl.querySelector('.del-task-btn').addEventListener('click', () => {
             openConfirmModal("Delete Task", "Are you sure you want to delete this task?", "Delete", () => {
                 p.tasks = p.tasks.filter(t => t.id !== task.id);
+                p.lastEdited = new Date().toISOString();
                 saveAll();
                 renderProjectTasks(m, p);
             });
@@ -208,6 +214,7 @@ function renderTasksList(m, p) {
         taskEl.querySelector('.add-check-btn').addEventListener('click', () => {
             if(!task.checklists) task.checklists = [];
             task.checklists.push({ text: '', done: false });
+            p.lastEdited = new Date().toISOString();
             saveAll();
             renderProjectTasks(m, p);
         });
@@ -216,12 +223,14 @@ function renderTasksList(m, p) {
             const idx = parseInt(cEl.dataset.cidx);
             cEl.querySelector('.task-circle.sm').addEventListener('click', () => {
                 task.checklists[idx].done = !task.checklists[idx].done;
+                p.lastEdited = new Date().toISOString();
                 saveAll();
                 renderProjectTasks(m, p);
             });
             const chkInp = cEl.querySelector('.checklist-input');
             chkInp.addEventListener('change', (e) => {
                 task.checklists[idx].text = e.target.value;
+                p.lastEdited = new Date().toISOString();
                 saveAll();
             });
             chkInp.addEventListener('input', function() {
@@ -235,6 +244,7 @@ function renderTasksList(m, p) {
             }, 0);
             cEl.querySelector('.del-check-btn').addEventListener('click', () => {
                 task.checklists.splice(idx, 1);
+                p.lastEdited = new Date().toISOString();
                 saveAll();
                 renderProjectTasks(m, p);
             });
@@ -268,6 +278,7 @@ function renderTasksList(m, p) {
                     if(!newTasks.includes(t)) newTasks.push(t);
                 });
                 p.tasks = newTasks;
+                p.lastEdited = new Date().toISOString();
                 saveAll();
                 renderProjectTasks(m, p);
             }

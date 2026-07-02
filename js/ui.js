@@ -49,7 +49,7 @@ export function renderSidebar() {
 
     sb.innerHTML = `
     <div class="sb-logo-wrap" style="display:flex; align-items:center; gap:12px;">
-      <img src="logo.png" alt="Logo" class="sb-logo" style="width: 32px; height: 32px; border-radius: 6px; padding: 0; background: transparent; border: none; object-fit: contain;">
+      <img src="LOGO.png" alt="Logo" class="sb-logo" style="width: 32px; height: 32px; border-radius: 6px; padding: 0; background: transparent; border: none; object-fit: contain;">
       ${authBtnHtml}
     </div>
     

@@ -800,7 +800,10 @@ export function renderAuthScreen() {
                     
                     <div class="auth-input-group">
                         <label>PASSWORD</label>
-                        <input type="password" id="auth-password" class="auth-input" placeholder="••••••••••••" autocomplete="current-password"/>
+                        <div style="position:relative;">
+                            <input type="password" id="auth-password" class="auth-input" placeholder="••••••••••••" autocomplete="current-password" style="padding-right: 40px;" />
+                            <i class="ti ti-eye" id="auth-toggle-pwd" style="position:absolute; right:12px; top:50%; transform:translateY(-50%); cursor:pointer; color:#777; font-size:16px;"></i>
+                        </div>
                     </div>
                     
                     <button class="auth-btn-primary" id="auth-submit-btn">
@@ -829,6 +832,20 @@ export function renderAuthScreen() {
             renderForm();
         });
         document.getElementById('auth-cfg-btn').addEventListener('click', openDbConfigModal);
+
+        const togglePwd = document.getElementById('auth-toggle-pwd');
+        const pwdInput = document.getElementById('auth-password');
+        if (togglePwd && pwdInput) {
+            togglePwd.addEventListener('click', () => {
+                if (pwdInput.type === 'password') {
+                    pwdInput.type = 'text';
+                    togglePwd.classList.replace('ti-eye', 'ti-eye-off');
+                } else {
+                    pwdInput.type = 'password';
+                    togglePwd.classList.replace('ti-eye-off', 'ti-eye');
+                }
+            });
+        }
         
         const bypassBtn = document.getElementById('auth-bypass-btn');
         if (bypassBtn) {

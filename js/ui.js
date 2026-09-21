@@ -42,15 +42,13 @@ export function renderSidebar() {
         }
     });
 
-    const bypassAuth = sessionStorage.getItem('bypass_auth') === 'true';
-    const authBtnHtml = bypassAuth 
-        ? '<button class="btn btn-ghost" id="sb-signin-btn" style="border-radius:0; font-size:9px; padding:4px 8px; font-family:\'IBM Plex Mono\', monospace;" title="Sign In"><i class="ti ti-login" style="font-size:12px;"></i> SIGN IN</button>'
-        : '<button class="btn btn-ghost" id="sb-signout-btn" style="border-radius:0; font-size:9px; padding:4px 8px; font-family:\'IBM Plex Mono\', monospace; color:#c53d3d; border-color:#522;" title="Sign Out" onmouseover="this.style.borderColor=\'#833\';this.style.color=\'#e55\'" onmouseout="this.style.borderColor=\'#522\';this.style.color=\'#c53d3d\'"><i class="ti ti-logout" style="font-size:12px;"></i> OUT</button>';
-
     sb.innerHTML = `
-    <div class="sb-logo-wrap" style="display:flex; align-items:center; gap:12px;">
-      <img src="logo.svg" alt="Logo" class="sb-logo" style="width: 32px; height: 32px; border-radius: 6px; padding: 0; background: transparent; border: none; object-fit: contain;">
-      ${authBtnHtml}
+    <div class="sb-logo-wrap" style="display:flex; align-items:center; justify-content:space-between;">
+      <div style="display:flex; align-items:center; gap:10px;">
+        <img src="logo.svg" alt="Logo" class="sb-logo" style="width: 30px; height: 30px; border-radius: 6px; padding: 0; background: transparent; border: none; object-fit: contain;">
+        <span style="font-family:'IBM Plex Mono', monospace; font-size:10px; font-weight:600; letter-spacing:1px; color:#ddd;">STUDIO PM</span>
+      </div>
+      <span style="font-family:'IBM Plex Mono', monospace; font-size:8px; color:#555; border:1px solid #222; padding:2px 5px; border-radius:3px; letter-spacing:0.8px;">LOCAL</span>
     </div>
     
     <div class="sb-section" style="position:relative;">
@@ -73,7 +71,7 @@ export function renderSidebar() {
              <button class="icon-btn" id="sb-replay-boot-btn" style="font-size:9px; color:#555; gap:4px; text-transform:uppercase; font-family:'IBM Plex Mono', monospace;" title="Replay Animation"><i class="ti ti-player-play" style="font-size:12px;"></i> REPLAY</button>
           </div>
           <div style="display:flex; gap:8px; margin-top:4px;">
-             <button class="icon-btn" id="sb-force-save-btn" style="font-size:9px; color:#5aa; gap:4px; text-transform:uppercase; font-family:'IBM Plex Mono', monospace;" title="Force Cloud Save"><i class="ti ti-cloud-upload" style="font-size:12px;"></i> SAVE TO CLOUD</button>
+             <span style="font-size:9px; color:#444; font-family:'IBM Plex Mono', monospace; letter-spacing:0.5px; display:flex; align-items:center; gap:5px;"><i class="ti ti-database" style="font-size:11px; color:#555;"></i> INDEXEDDB ACTIVE</span>
           </div>
        </div>
        <div id="sb-clock" style="color:#333;">${formatDateTime(new Date().toISOString())}</div>

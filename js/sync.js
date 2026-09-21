@@ -1,46 +1,26 @@
 import { state } from './state.js';
 import { saveAll } from './db.js';
 
-// ─── PERMANENT HOSTING CREDENTIALS ───
-// Paste your Supabase project keys here to make the login screen load by default for everyone
-const DEFAULT_SUPABASE_URL = "https://gqmqfennyioguszfgkte.supabase.co"; 
-const DEFAULT_SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdxbXFmZW5ueWlvZ3VzemZna3RlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIyMjk5MzgsImV4cCI6MjA5NzgwNTkzOH0.q1WmS9rMSLT758eMlfBeoUL9n4rVqI7LL_IgIe7iOg4";
+// ─── LOCAL-ONLY MODE (BACKEND STRIPPED) ───
+const DEFAULT_SUPABASE_URL = ""; 
+const DEFAULT_SUPABASE_ANON_KEY = "";
 
 let supabaseClient = null;
 
 export function isConfigured() {
-    const url = localStorage.getItem('supabase_url') || DEFAULT_SUPABASE_URL;
-    const key = localStorage.getItem('supabase_anon_key') || DEFAULT_SUPABASE_ANON_KEY;
-    return !!(url && key);
+    return false;
 }
 
 export function saveConfig(url, key) {
-    localStorage.setItem('supabase_url', url.trim());
-    localStorage.setItem('supabase_anon_key', key.trim());
-    supabaseClient = null; // Force re-initialization
-    return initSupabase();
+    return null;
 }
 
 export function initSupabase() {
-    if (supabaseClient) return supabaseClient;
-    
-    const url = localStorage.getItem('supabase_url') || DEFAULT_SUPABASE_URL;
-    const key = localStorage.getItem('supabase_anon_key') || DEFAULT_SUPABASE_ANON_KEY;
-    
-    if (url && key && window.supabase) {
-        try {
-            supabaseClient = window.supabase.createClient(url, key);
-            console.log("Supabase Client initialized successfully.");
-        } catch (e) {
-            console.error("Failed to initialize Supabase client:", e);
-        }
-    }
-    return supabaseClient;
+    return null;
 }
 
 export function getClient() {
-    if (!supabaseClient) initSupabase();
-    return supabaseClient;
+    return null;
 }
 
 export async function getCurrentUser(timeoutMs = 1200) {

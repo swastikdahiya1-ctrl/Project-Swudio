@@ -2,7 +2,6 @@ import { state } from './state.js';
 import { initDB } from './db.js';
 import { renderSidebar, renderDashboard, renderAllIdeas, renderTrash, openNewProjModal } from './ui.js';
 import { renderProject } from './project.js';
-import { initSupabase, getCurrentUser, syncDown, isConfigured } from './sync.js';
 
 export function nav(view, projId = null, opts = {}) {
     state.viewHistory.push(JSON.parse(JSON.stringify(state.S)));
@@ -139,35 +138,10 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Fast boot: initialize local DB immediately without blocking on font loading
-    initDB(async () => {
-        initSupabase();
-
-        const bypassAuth = sessionStorage.getItem('bypass_auth') === 'true';
-
-        if (isConfigured() && !bypassAuth) {
-            const user = await getCurrentUser(1200);
-            if (user) {
-                window.currentUser = user;
-                // Instant boot from local IndexedDB state
-                bootApp();
-                import('./ui.js').then(ui => ui.checkNamePrompt());
-
-                // Sync cloud data asynchronously in the background without blocking initial paint
-                syncDown().then(updated => {
-                    if (updated) render();
-                }).catch(err => console.warn('Background sync encountered an issue:', err));
-            } else {
-                // If Supabase is configured but no session exists, show login screen immediately
-                import('./ui.js').then(ui => {
-                    ui.renderAuthScreen();
-                });
-            }
-        } else {
-            // Local-only fallback
-            window.currentUser = { id: 'local_user' };
-            bootApp();
-            import('./ui.js').then(ui => ui.checkNamePrompt());
-        }
+    // Instant offline boot: initialize local IndexedDB immediately
+    initDB(() => {
+        window.currentUser = { id: 'local_user' };
+        bootApp();
+        import('./ui.js').then(ui => ui.checkNamePrompt());
     });
 });

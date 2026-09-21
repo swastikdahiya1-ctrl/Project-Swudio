@@ -43,13 +43,23 @@ export function getClient() {
     return supabaseClient;
 }
 
-export async function getCurrentUser() {
+export async function getCurrentUser(timeoutMs = 1200) {
     const supabase = getClient();
     if (!supabase) return null;
     try {
-        const { data: { user }, error } = await supabase.auth.getUser();
-        if (error) return null;
-        return user;
+        // Fast local check: if no active session in storage, avoid unnecessary network round-trip
+        const { data: sessionData } = await supabase.auth.getSession();
+        if (!sessionData?.session) return null;
+
+        // Session exists: validate with timeout protection
+        const fetchUser = supabase.auth.getUser().catch(() => ({ error: 'fetch_failed' }));
+        const timeout = new Promise(resolve => setTimeout(() => resolve({ error: 'timeout' }), timeoutMs));
+        const res = await Promise.race([fetchUser, timeout]);
+        if (!res || res.error || !res.data?.user) {
+            // If network timed out or failed but local session exists, fall back to cached user
+            return sessionData.session.user || null;
+        }
+        return res.data.user;
     } catch (e) {
         return null;
     }

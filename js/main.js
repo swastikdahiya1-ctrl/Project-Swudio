@@ -139,28 +139,26 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Wait for BOTH the DB and fonts before booting.
-    const dbPromise   = new Promise(resolve => initDB(resolve));
-    const fontPromise = Promise.race([
-        document.fonts.ready,
-        new Promise(resolve => setTimeout(resolve, 2000)) // 2s safety cap
-    ]);
-
-    Promise.all([dbPromise, fontPromise]).then(async () => {
+    // Fast boot: initialize local DB immediately without blocking on font loading
+    initDB(async () => {
         initSupabase();
 
         const bypassAuth = sessionStorage.getItem('bypass_auth') === 'true';
 
         if (isConfigured() && !bypassAuth) {
-            const user = await getCurrentUser();
+            const user = await getCurrentUser(1200);
             if (user) {
                 window.currentUser = user;
-                // Sync cloud data to local IndexedDB first on boot
-                await syncDown();
+                // Instant boot from local IndexedDB state
                 bootApp();
                 import('./ui.js').then(ui => ui.checkNamePrompt());
+
+                // Sync cloud data asynchronously in the background without blocking initial paint
+                syncDown().then(updated => {
+                    if (updated) render();
+                }).catch(err => console.warn('Background sync encountered an issue:', err));
             } else {
-                // If Supabase is configured but no session exists, show login screen
+                // If Supabase is configured but no session exists, show login screen immediately
                 import('./ui.js').then(ui => {
                     ui.renderAuthScreen();
                 });
